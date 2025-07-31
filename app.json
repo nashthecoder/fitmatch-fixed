@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "Fit Match",
+    "slug": "fit-match",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo-minimalist.png",
+    "scheme": "fitmatch",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.julianojosoa13.fitmatch",
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo-minimalist.png",
+        "backgroundColor": "#0f0e0c"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.julianojosoa13.fitmatch",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/image/logo-minimalist.png"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/logo-minimalist.png",
+          "imageWidth": 100,
+          "resizeMode": "cover",
+          "backgroundColor": "#0f0e0c"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9990ce12-074d-470a-afa3-1e9a6d8a0bdd"
+      }
+    },
+    "owner": "julianojosoa13"
+  }
+}
