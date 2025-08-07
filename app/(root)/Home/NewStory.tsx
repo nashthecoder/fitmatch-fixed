@@ -3,7 +3,7 @@ import PhotoVIdeoIcon from "@/components/Icons/Posts/PhotoVideoIcon";
 import { firebaseApp } from "@/config/firebase";
 import { uploadMediaAsync } from "@/helpers/firestore"; // Your existing helper
 import { RootState } from "@/store/rootReducer";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "expo-blur";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -162,8 +162,8 @@ export default function NewStory() {
       </View>
       <Modal transparent visible={isPosting}>
         <BlurView
-          blurType="dark"
-          blurAmount={15}
+          tint="dark"
+          intensity={15}
           reducedTransparencyFallbackColor="black"
           style={{ ...StyleSheet.absoluteFillObject }}
         />

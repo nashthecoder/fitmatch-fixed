@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/config/firebaseConfig';
+import { auth } from '@/config/firebase';
 
 interface GoogleSignInResult {
   user: any;

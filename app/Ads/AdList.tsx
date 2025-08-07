@@ -2,7 +2,7 @@ import BackBTNIcon from "@/components/Icons/BackBTNIcon";
 import Spinner from "@/components/shared/Spinner";
 import { db } from "@/config/firebase";
 import { AntDesign, Entypo, Ionicons } from "@expo/vector-icons";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import { getAuth } from "firebase/auth";
 import {

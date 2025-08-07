@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/config/firebaseConfig';
+import { auth } from '@/config/firebase';
 
 interface EmailAuthResult {
   user: any;

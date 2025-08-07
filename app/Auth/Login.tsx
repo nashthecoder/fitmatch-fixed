@@ -2,7 +2,7 @@ import { useEmailAuth } from "@/customHooks/useEmailAuth";
 import { useGoogleSignIn } from "@/customHooks/useGoogleSignIn";
 import { RootState } from "@/store/rootReducer";
 import { Ionicons, Octicons } from "@expo/vector-icons";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import React, { useEffect, useState } from "react";
@@ -73,8 +73,8 @@ const Login = () => {
           className="flex-1 h-screen w-screen z-10 items-center justify-center absolute bg-transparent"
         >
           <BlurView
-            blurType="dark"
-            blurAmount={10}
+            tint="dark"
+            intensity={10}
             reducedTransparencyFallbackColor="black"
             style={{ ...StyleSheet.absoluteFillObject }}
           />
@@ -218,8 +218,8 @@ const Login = () => {
         >
           <BlurView
             style={{ ...StyleSheet.absoluteFillObject }}
-            blurType="dark"
-            blurAmount={4}
+            tint="dark"
+            intensity={4}
             blurRadius={4}
             reducedTransparencyFallbackColor="black"
           />

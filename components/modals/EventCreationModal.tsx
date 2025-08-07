@@ -1,6 +1,6 @@
 import { RootState } from "@/store/rootReducer";
 import { AntDesign } from "@expo/vector-icons";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -68,8 +68,8 @@ const EventCreationModal = ({
       >
         <BlurView
           style={{ ...StyleSheet.absoluteFillObject }}
-          blurAmount={25}
-          blurType="dark"
+          intensity={25}
+          tint="dark"
           reducedTransparencyFallbackColor="black"
         />
         <View className="flex-row justify-between items-center pr-10 pl-4 w-full absolute top-8">

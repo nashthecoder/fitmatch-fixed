@@ -32,17 +32,55 @@ const queryClient = new QueryClient({
   },
 });
 
-onlineManager.setEventListener((setOnline) => {
-  const subscription = Network.addNetworkStateListener((state) => {
-    setOnline(!!state.isConnected);
+// Platform-specific online manager setup
+if (Platform.OS !== 'web') {
+  onlineManager.setEventListener((setOnline) => {
+    const subscription = Network.addNetworkStateListener((state) => {
+      setOnline(!!state.isConnected);
+    });
+    return () => subscription.remove();
   });
-  return () => subscription.remove();
-}); // auto refetch integration for React Native :contentReference[oaicite:5]{index=5}
+} else {
+  // For web, use the browser's online/offline events
+  onlineManager.setEventListener((setOnline) => {
+    // Check if window is available (browser environment)
+    if (typeof window !== 'undefined') {
+      const handleOnline = () => setOnline(true);
+      const handleOffline = () => setOnline(false);
+      
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    } else {
+      // Fallback for server-side rendering
+      return () => {};
+    }
+  });
+}
+
+// Component that uses Redux hooks - must be inside Provider
+function AppContent() {
+  useUserActive();
+  
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        {/* Define your Offline404 screen */}
+        <Stack.Screen name="Offline404" />
+      </Stack>
+      <Toast />
+    </GestureHandlerRootView>
+  );
+}
 
 export default function RootLayout() {
-  useUserActive();
+  // Always load fonts, but with fallback for web
   const [fontsLoaded] = useFonts({
-    // Essential fonts only - load others dynamically as needed
     "Kavivanar-Regular": require("../assets/fonts/Kavivanar-Regular.ttf"),
     "RobotoCondensed-Regular": require("../assets/fonts/Roboto_Condensed-Regular.ttf"),
     "RobotoCondensed-Bold": require("../assets/fonts/Roboto_Condensed-Bold.ttf"),
@@ -73,7 +111,12 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hide();
+    if (fontsLoaded) {
+      // Platform-specific splash screen handling
+      if (Platform.OS !== 'web') {
+        SplashScreen.hideAsync();
+      }
+    }
   }, [fontsLoaded]);
 
   if (!fontsLoaded) {
@@ -85,14 +128,7 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <PersistGate loading={<ActivityIndicator />} persistor={persistor}>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                {/* Define your Offline404 screen */}
-                <Stack.Screen name="Offline404" />
-              </Stack>
-              <Toast />
-            </GestureHandlerRootView>
+            <AppContent />
           </PersistGate>
         </QueryClientProvider>
       </ErrorBoundary>

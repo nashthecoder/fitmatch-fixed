@@ -19,7 +19,7 @@ import {
   updatePartnerField,
 } from "@/store/slices/partnerSlice";
 import { resetUserData } from "@/store/slices/userSlice";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "expo-blur";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";

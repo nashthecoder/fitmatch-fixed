@@ -10,7 +10,7 @@ import {
   MaterialIcons,
   Octicons,
 } from "@expo/vector-icons";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "expo-blur";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import * as VideoThumbnails from "expo-video-thumbnails";
@@ -334,7 +334,7 @@ const Onboarding = () => {
       {busy && (
         <View className="absolute flex-1 z-20 top-0 bottom-0 left-0 right-0 items-center justify-center bg-black/80">
           {/* <BlurView
-            blurType="dark"
+            tint="dark"
             reducedTransparencyFallbackColor="black"
             blurRadius={15}
             style={{ ...StyleSheet.absoluteFillObject }}
@@ -738,8 +738,8 @@ const Onboarding = () => {
           >
             <View className="flex-1 justify-center">
               <BlurView
-                blurType="dark"
-                blurAmount={25}
+                tint="dark"
+                intensity={25}
                 style={{ ...StyleSheet.absoluteFillObject }}
                 reducedTransparencyFallbackColor="black"
               />
@@ -925,8 +925,8 @@ const Onboarding = () => {
         >
           <BlurView
             style={{ ...StyleSheet.absoluteFillObject }}
-            blurType="dark"
-            blurAmount={4}
+            tint="dark"
+            intensity={4}
             blurRadius={4}
             reducedTransparencyFallbackColor="black"
           />

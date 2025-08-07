@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/config/firebaseConfig';
+import { db } from '@/config/firebase';
 
 interface UserListResult {
   data: any[];

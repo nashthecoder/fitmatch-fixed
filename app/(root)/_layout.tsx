@@ -28,10 +28,10 @@ const TabsLayout = () => {
         // tabBarBackground: () => (
         //   <View className="h-[60] w-full overflow-hidden">
         //     <BlurView
-        //       blurType="dark"
+        //       tint="dark"
         //       reducedTransparencyFallbackColor="black"
         //       style={{ position: "absolute", height: 60, width: "100%" }}
-        //       blurAmount={10}
+        //       intensity={10}
         //     />
         //   </View>
         // ),

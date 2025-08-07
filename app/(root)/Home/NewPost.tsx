@@ -10,7 +10,7 @@ import WeightsIcon from "@/components/Icons/WeightsIcon";
 import { db, firebaseApp } from "@/config/firebase"; // your config path
 import { RootState } from "@/store/rootReducer";
 import { AntDesign } from "@expo/vector-icons";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "expo-blur";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -401,8 +401,8 @@ const NewPost = () => {
       </View>
       <Modal transparent visible={isPosting}>
         <BlurView
-          blurType="dark"
-          blurAmount={15}
+          tint="dark"
+          intensity={15}
           reducedTransparencyFallbackColor="black"
           style={{ ...StyleSheet.absoluteFillObject }}
         />
