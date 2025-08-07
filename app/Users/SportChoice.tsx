@@ -48,7 +48,8 @@ const SportChoice = () => {
 
   useEffect(() => {
     if (userData?.sportExtreme !== "" && userData?.frequence) {
-      router.replace("/Users/DietChoice");
+      // Redirect to main app instead of continuing detailed onboarding
+      router.replace("/(root)/Home");
     }
   }, []);
 
@@ -71,7 +72,10 @@ const SportChoice = () => {
           resizeMode="cover"
         />
         <Text className="text-white tracking-[-0.3px] text-center font-roboto-condensed text-[28px] my-8">
-          TON SPORT EXTRÊME
+          VOTRE PASSION FITNESS
+        </Text>
+        <Text className="text-white/70 tracking-[-0.3px] text-center font-roboto-condensed text-[16px] mb-4 mx-4">
+          Choisissez votre activité principale pour trouver des partenaires compatibles
         </Text>
         <View className="bg-[#2E2C2C] px-6 py-2 mx-4">
           <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
@@ -170,12 +174,27 @@ const SportChoice = () => {
             }
             onChange("sportExtreme", choiceTexts[selected]);
             onChange("frequence", frequency);
+            
+            // Mark onboarding as complete so user can access main app
+            onChange("onboardingComplete", true);
+            
             await updateUserData({
               sportExtreme: choiceTexts[selected],
               frequence: frequency,
+              onboardingComplete: true,
             });
             setLoading(false);
-            router.navigate("/Users/DietChoice");
+            
+            // Show success message about completing profile later
+            Toast.show({
+              type: "success",
+              text1: "Profil créé !",
+              text2: "Vous pouvez maintenant explorer FitMatch. Complétez votre profil pour de meilleurs matches !",
+              visibilityTime: 5000,
+            });
+            
+            // Go directly to main app instead of continuing onboarding
+            router.replace("/(root)/Home");
           }}
         >
           <Text className="text-white font-roboto-condensed tracking-[-0.3px] text-[20px]">
@@ -183,6 +202,10 @@ const SportChoice = () => {
           </Text>
           {loading && <ActivityIndicator size={"large"} color={"white"} />}
         </TouchableOpacity>
+        
+        <Text className="text-white/50 text-center tracking-[-0.3px] font-roboto-condensed text-[12px] mx-4 mt-4">
+          Vous pourrez ajouter d'autres sports et préférences dans votre profil
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

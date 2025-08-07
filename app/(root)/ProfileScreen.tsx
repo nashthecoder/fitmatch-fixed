@@ -35,6 +35,28 @@ const ProfileScreen = () => {
   const [busy, setBusy] = useState(false);
   const dispatch = useDispatch();
 
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = (): number => {
+    if (!userData) return 0;
+    
+    const fields = [
+      userData.pseudo,
+      userData.prenoms,
+      userData.naissance,
+      userData.ville,
+      userData.profilePicUrl,
+      userData.sportExtreme,
+      userData.personality,
+      userData.diet,
+      userData.weekendVibes && userData.weekendVibes.length > 0,
+      userData.mesVideos && userData.mesVideos.length > 0,
+      userData.percentage !== undefined, // Has taken quiz
+    ];
+    
+    const completedFields = fields.filter(Boolean).length;
+    return Math.round((completedFields / fields.length) * 100);
+  };
+
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -121,6 +143,128 @@ const ProfileScreen = () => {
           {userData.prenoms} {userData.nom}
         </Text>
         <Text style={styles.email}>{userData.email}</Text>
+
+        {/* Profile Completion Progress */}
+        <View className="w-full bg-[#2E2C2C] rounded-lg p-4 my-4">
+          <Text className="text-white font-roboto-condensed text-[16px] mb-2">
+            Complétez votre profil pour de meilleurs matches
+          </Text>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-white/70 text-[12px]">Progression</Text>
+            <Text className="text-white/70 text-[12px]">
+              {calculateProfileCompletion()}%
+            </Text>
+          </View>
+          <View className="w-full h-2 bg-gray-600 rounded-full">
+            <View 
+              className="h-2 bg-red rounded-full" 
+              style={{ width: `${calculateProfileCompletion()}%` }}
+            />
+          </View>
+        </View>
+
+        {/* Quick Profile Actions */}
+        <View className="w-full space-y-3 mb-6">
+          {!userData.personality && (
+            <TouchableOpacity
+              className="bg-[#2E2C2C] rounded-lg p-4 flex-row items-center justify-between"
+              onPress={() => router.navigate("/Users/PersonalityChoice")}
+            >
+              <View className="flex-row items-center">
+                <Text className="text-white mr-3">🧠</Text>
+                <View>
+                  <Text className="text-white font-roboto-condensed text-[14px]">
+                    Définir ma personnalité
+                  </Text>
+                  <Text className="text-white/50 text-[12px]">
+                    Aidez les autres à mieux vous connaître
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-red text-[20px]">→</Text>
+            </TouchableOpacity>
+          )}
+          
+          {!userData.diet && (
+            <TouchableOpacity
+              className="bg-[#2E2C2C] rounded-lg p-4 flex-row items-center justify-between"
+              onPress={() => router.navigate("/Users/DietChoice")}
+            >
+              <View className="flex-row items-center">
+                <Text className="text-white mr-3">🥗</Text>
+                <View>
+                  <Text className="text-white font-roboto-condensed text-[14px]">
+                    Mes préférences alimentaires
+                  </Text>
+                  <Text className="text-white/50 text-[12px]">
+                    Trouvez des partenaires avec des habitudes similaires
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-red text-[20px]">→</Text>
+            </TouchableOpacity>
+          )}
+          
+          {(!userData.weekendVibes || userData.weekendVibes.length === 0) && (
+            <TouchableOpacity
+              className="bg-[#2E2C2C] rounded-lg p-4 flex-row items-center justify-between"
+              onPress={() => router.navigate("/Users/WeekendVibes")}
+            >
+              <View className="flex-row items-center">
+                <Text className="text-white mr-3">🎉</Text>
+                <View>
+                  <Text className="text-white font-roboto-condensed text-[14px]">
+                    Mes activités weekend
+                  </Text>
+                  <Text className="text-white/50 text-[12px]">
+                    Partagez vos hobbies et centres d'intérêt
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-red text-[20px]">→</Text>
+            </TouchableOpacity>
+          )}
+          
+          {(!userData.mesVideos || userData.mesVideos.length === 0) && (
+            <TouchableOpacity
+              className="bg-[#2E2C2C] rounded-lg p-4 flex-row items-center justify-between"
+              onPress={() => router.navigate("/Users/VideoChallenge")}
+            >
+              <View className="flex-row items-center">
+                <Text className="text-white mr-3">🎥</Text>
+                <View>
+                  <Text className="text-white font-roboto-condensed text-[14px]">
+                    Ajouter des vidéos
+                  </Text>
+                  <Text className="text-white/50 text-[12px]">
+                    Montrez votre style et vos talents
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-red text-[20px]">→</Text>
+            </TouchableOpacity>
+          )}
+          
+          {!userData.percentage && (
+            <TouchableOpacity
+              className="bg-[#2E2C2C] rounded-lg p-4 flex-row items-center justify-between"
+              onPress={() => router.navigate("/Users/MiniQuiz")}
+            >
+              <View className="flex-row items-center">
+                <Text className="text-white mr-3">🏆</Text>
+                <View>
+                  <Text className="text-white font-roboto-condensed text-[14px]">
+                    Passer le FitScore Quiz
+                  </Text>
+                  <Text className="text-white/50 text-[12px]">
+                    Découvrez votre niveau et trouvez des partenaires adaptés
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-red text-[20px]">→</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {userData.totalPoints !== undefined && (
           <Text style={styles.points}>🏆 Points: {userData.totalPoints}</Text>
