@@ -20,6 +20,7 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -151,48 +152,110 @@ const Onboarding = () => {
 
   const storage = getStorage();
 
+  // Validate file before upload
+  const validateFile = async (uri: string, type: 'image' | 'video'): Promise<boolean> => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      const maxSize = type === 'image' ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for videos
+      
+      if (blob.size > maxSize) {
+        Toast.show({
+          type: "error",
+          text1: "Fichier trop volumineux",
+          text2: `Taille maximale autorisée: ${type === 'image' ? '10MB' : '50MB'}`,
+          visibilityTime: 5000,
+        });
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('File validation error:', error);
+      return false;
+    }
+  };
+
   const uploadMedia = async (
     userId: string,
     mediaItems: PhotoVideoMediaType[],
     folder: "mesPhotos" | "mesVideos"
   ): Promise<PhotoVideoMediaType[]> => {
     const uploadPromises = mediaItems.map(async (mediaItem) => {
-      // Upload main media file
-      const mediaFilename = `${folder}_${Date.now()}_${
-        mediaItem.id
-      }.${mediaItem.uri.split(".").pop()}`;
-      const mediaRef = ref(
-        storage,
-        `users/${userId}/${folder}/${mediaFilename}`
-      );
+      try {
+        // Check file size before upload (limit to 10MB for images, 50MB for videos)
+        const response = await fetch(mediaItem.uri);
+        const blob = await response.blob();
+        
+        const maxSize = folder === "mesPhotos" ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for photos, 50MB for videos
+        if (blob.size > maxSize) {
+          throw new Error(`Fichier trop volumineux. Taille maximale: ${folder === "mesPhotos" ? "10MB" : "50MB"}`);
+        }
 
-      const mediaResponse = await fetch(mediaItem.uri);
-      const mediaBlob = await mediaResponse.blob();
-      const mediaUpload = uploadBytesResumable(mediaRef, mediaBlob);
-      await mediaUpload;
-      const mediaUrl = await getDownloadURL(mediaUpload.snapshot.ref);
-
-      // Upload thumbnail if it exists
-      let thumbnailUrl = null;
-      if (mediaItem.thumbnail) {
-        const thumbFilename = `thumb_${mediaFilename}`;
-        const thumbRef = ref(
+        // Upload main media file
+        const mediaFilename = `${folder}_${Date.now()}_${
+          mediaItem.id
+        }.${mediaItem.uri.split(".").pop()}`;
+        const mediaRef = ref(
           storage,
-          `users/${userId}/${folder}/thumbs/${thumbFilename}`
+          `users/${userId}/${folder}/${mediaFilename}`
         );
 
-        const thumbResponse = await fetch(mediaItem.thumbnail);
-        const thumbBlob = await thumbResponse.blob();
-        const thumbUpload = uploadBytesResumable(thumbRef, thumbBlob);
-        await thumbUpload;
-        thumbnailUrl = await getDownloadURL(thumbUpload.snapshot.ref);
-      }
+        console.log(`Uploading ${folder} file: ${mediaFilename}, size: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
 
-      return {
-        id: mediaItem.id,
-        uri: mediaUrl,
-        thumbnail: thumbnailUrl,
-      };
+        const mediaUpload = uploadBytesResumable(mediaRef, blob);
+        
+        // Add upload progress monitoring
+        await new Promise((resolve, reject) => {
+          mediaUpload.on('state_changed', 
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log(`Upload progress: ${progress.toFixed(1)}%`);
+            },
+            (error) => {
+              console.error('Upload error:', error);
+              reject(error);
+            },
+            () => {
+              resolve(mediaUpload.snapshot);
+            }
+          );
+        });
+
+        const mediaUrl = await getDownloadURL(mediaUpload.snapshot.ref);
+
+        // Upload thumbnail if it exists
+        let thumbnailUrl = null;
+        if (mediaItem.thumbnail) {
+          const thumbFilename = `thumb_${mediaFilename}`;
+          const thumbRef = ref(
+            storage,
+            `users/${userId}/${folder}/thumbs/${thumbFilename}`
+          );
+
+          const thumbResponse = await fetch(mediaItem.thumbnail);
+          const thumbBlob = await thumbResponse.blob();
+          
+          // Limit thumbnail size to 2MB
+          if (thumbBlob.size > 2 * 1024 * 1024) {
+            console.warn('Thumbnail too large, skipping');
+          } else {
+            const thumbUpload = uploadBytesResumable(thumbRef, thumbBlob);
+            await thumbUpload;
+            thumbnailUrl = await getDownloadURL(thumbUpload.snapshot.ref);
+          }
+        }
+
+        return {
+          id: mediaItem.id,
+          uri: mediaUrl,
+          thumbnail: thumbnailUrl,
+        };
+      } catch (error) {
+        console.error(`Failed to upload ${folder} item:`, error);
+        throw error;
+      }
     });
 
     return Promise.all(uploadPromises);
@@ -244,7 +307,7 @@ const Onboarding = () => {
       mediaTypes: ["images"], // Fixed mediaTypes
       allowsEditing: false,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.8, // Reduce quality to compress images
       allowsMultipleSelection: true,
       selectionLimit: 2,
     });
@@ -255,16 +318,31 @@ const Onboarding = () => {
         id: Math.random().toString(36).substring(7),
       }));
 
+      // Validate all selected images
+      const validationPromises = newImages.map(img => validateFile(img.uri, 'image'));
+      const validationResults = await Promise.all(validationPromises);
+      
+      const validImages = newImages.filter((_, index) => validationResults[index]);
+      
+      if (validImages.length === 0) {
+        Toast.show({
+          type: "error",
+          text1: "Aucune image valide",
+          text2: "Toutes les images sélectionnées sont trop volumineuses",
+        });
+        return;
+      }
+
       setSelectedImages((prevImages) => {
         // If user selected only one image, replace at the specified id
-        if (newImages.length === 1) {
+        if (validImages.length === 1) {
           const updatedImages = [...prevImages];
-          updatedImages[id] = newImages[0];
+          updatedImages[id] = validImages[0];
           return updatedImages;
         }
         // If user selected two images, replace the entire array
-        else if (newImages.length === 2) {
-          return newImages;
+        else if (validImages.length === 2) {
+          return validImages;
         }
         // Fallback (shouldn't happen due to selectionLimit)
         return prevImages;
@@ -286,7 +364,7 @@ const Onboarding = () => {
       mediaTypes: ["videos"],
       allowsEditing: false,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.7, // Reduce quality to compress videos
       allowsMultipleSelection: true,
       selectionLimit: 2,
     });
@@ -295,17 +373,30 @@ const Onboarding = () => {
       // Process each video to get thumbnails
       const processedVideos = await Promise.all(
         result.assets.map(async (asset) => {
+          // Validate video file size first
+          const isValid = await validateFile(asset.uri, 'video');
+          if (!isValid) {
+            return null;
+          }
+
           try {
-            const { uri } = await VideoThumbnails.getThumbnailAsync(asset.uri, {
-              time: 1000, // Get thumbnail at 1 second
-              headers: {
-                // Cloudinary-style crop (if using a CDN)
-                "X-Crop": "square",
-              },
-            });
+            // Check if we're on web platform
+            let thumbnailUri = null;
+            
+            if (Platform.OS !== 'web') {
+              const { uri } = await VideoThumbnails.getThumbnailAsync(asset.uri, {
+                time: 1000, // Get thumbnail at 1 second
+                headers: {
+                  // Cloudinary-style crop (if using a CDN)
+                  "X-Crop": "square",
+                },
+              });
+              thumbnailUri = uri;
+            }
+            
             return {
               uri: asset.uri,
-              thumbnail: uri,
+              thumbnail: thumbnailUri,
               id: Math.random().toString(36).substring(7),
             };
           } catch (e) {
@@ -319,13 +410,25 @@ const Onboarding = () => {
         })
       );
 
+      // Filter out null results (invalid files)
+      const validVideos = processedVideos.filter(video => video !== null);
+      
+      if (validVideos.length === 0) {
+        Toast.show({
+          type: "error",
+          text1: "Aucune vidéo valide",
+          text2: "Toutes les vidéos sélectionnées sont trop volumineuses",
+        });
+        return;
+      }
+
       setSelectedVideos((prev) => {
-        if (processedVideos.length === 1) {
+        if (validVideos.length === 1) {
           const updated = [...prev];
-          updated[id] = processedVideos[0];
+          updated[id] = validVideos[0];
           return updated;
         }
-        return processedVideos;
+        return validVideos;
       });
     }
   };
@@ -824,10 +927,10 @@ const Onboarding = () => {
             if (
               userData?.sex! <= 0 ||
               userData?.nom === "" ||
-              userData.prenoms === "" ||
+              userData?.prenoms === "" ||
               userData?.naissance === "" ||
               userData?.ville === "" ||
-              userData.nationalite === "" ||
+              userData?.nationalite === "" ||
               selectedImages.length === 0
             ) {
               Toast.show({
@@ -871,7 +974,9 @@ const Onboarding = () => {
               console.log("uploaded videos >>> ", uploadedVideos);
 
               // Create/update user document
-              await createUserIfNotExists("binome", userData);
+              if (userData) {
+                await createUserIfNotExists("binome", userData);
+              }
 
               setShowOverlay(false);
               setBusy(false);
@@ -881,11 +986,25 @@ const Onboarding = () => {
               console.error("Upload error:", error);
               setShowOverlay(false);
               setBusy(false);
+              
+              let errorMessage = "Échec du téléchargement des médias. Veuillez réessayer.";
+              
+              // Provide specific error messages
+              if (error instanceof Error) {
+                if (error.message.includes("trop volumineux")) {
+                  errorMessage = error.message;
+                } else if (error.message.includes("network")) {
+                  errorMessage = "Problème de connexion. Vérifiez votre internet.";
+                } else if (error.message.includes("permission")) {
+                  errorMessage = "Permissions insuffisantes. Contactez le support.";
+                }
+              }
+              
               Toast.show({
                 type: "error",
-                text1: "Erreur",
-                text2:
-                  "Échec du téléchargement des médias. Veuillez réessayer.",
+                text1: "Erreur de téléchargement",
+                text2: errorMessage,
+                visibilityTime: 8000,
               });
             }
           }}
@@ -1046,7 +1165,12 @@ const Onboarding = () => {
                     handleChange("email", signUpForm.email);
                     handleChange("personalData", true);
                     handleChange("acceptCGU", true);
-                    const userId = getAuth().currentUser!.uid;
+                    
+                    const currentUser = getAuth().currentUser;
+                    if (!currentUser) {
+                      throw new Error("Utilisateur non authentifié");
+                    }
+                    const userId = currentUser.uid;
                     console.log("User ID >> ", userId);
 
                     // Step 3: Upload media files
@@ -1064,7 +1188,9 @@ const Onboarding = () => {
                     handleChange("profilePicUrl", uploadedPhotos[0].uri);
 
                     // Step 4: Create user document
-                    await createUserIfNotExists("binome", userData);
+                    if (userData) {
+                      await createUserIfNotExists("binome", userData);
+                    }
 
                     // Step 5: Sign in the user
                     await signIn(signUpForm.email, signUpForm.password);
@@ -1075,7 +1201,7 @@ const Onboarding = () => {
                     console.error("Registration error:", err);
                     Toast.show({
                       text1: "Erreur",
-                      text2: err.message || "Une erreur est survenue",
+                      text2: (err as Error).message || "Une erreur est survenue",
                       type: "error",
                     });
                   } finally {

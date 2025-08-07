@@ -10,6 +10,13 @@ export interface UserData {
   prenoms?: string;
   pseudo?: string;
   naissance?: any; // Firestore Timestamp
+  ville?: string;
+  nationalite?: string;
+  sex?: number;
+  personalData?: boolean;
+  acceptCGU?: boolean;
+  mesPhotos?: any[];
+  mesVideos?: any[];
   userType?: string;
   // Add other user properties as needed
 }
