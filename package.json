@@ -8,7 +8,12 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "type-check": "tsc --noEmit",
+    "build": "expo export",
+    "dev": "expo start --dev-client",
+    "clean": "expo install --fix"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.61",

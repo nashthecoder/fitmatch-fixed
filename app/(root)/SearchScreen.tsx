@@ -125,7 +125,7 @@ const SearchScreen = () => {
         selectedFilter={selectedFilter}
         setSelectedFilter={handleFilterChange}
       />
-      {selectedFilter == "personnes" && !loading && (
+      {selectedFilter === "personnes" && !loading && (
         <Animated.View
           entering={FadeInDown}
           className="flex-row items-center mb-4 gap-x-4"
