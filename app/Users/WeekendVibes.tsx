@@ -17,6 +17,7 @@ import YogaIcon from "@/components/Icons/YogaIcon";
 import { useHandleFormChange } from "@/customHooks/useHandleFormChange copy";
 import { updateUserData } from "@/helpers/firestore";
 import { RootState } from "@/store/rootReducer";
+import { setUserData } from "@/store/slices/userSlice";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 
@@ -30,7 +31,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 // Create a mapping of numbers to their corresponding labels
 const vibesMap: Record<number, string> = {
@@ -61,6 +62,7 @@ const WeekendVibes = () => {
   const userData = useSelector((state: RootState) => state.user.data);
   const [weekendVibesLabels, setWeekendVibesLabels] = useState<string[]>([]);
   const handleChange = useHandleFormChange();
+  const dispatch = useDispatch();
 
   const handleSelect = (n: number) => {
     setSelectedList((prevList) => {
@@ -568,8 +570,16 @@ const WeekendVibes = () => {
               return;
             }
             setLoading(true);
+            
+            // Update Redux store immediately
+            if (userData) {
+              dispatch(setUserData({ ...userData, weekendVibes: weekendVibesLabels }));
+            }
+            
+            // Update Firestore
             handleChange("weekendVibes", weekendVibesLabels);
             await updateUserData({ weekendVibes: weekendVibesLabels });
+            
             setLoading(false);
             router.navigate("/Users/SportsObjectives");
           }}

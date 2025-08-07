@@ -4,7 +4,6 @@ import React from "react";
 import {
   ActivityIndicator,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -47,7 +46,7 @@ const StoryBar = () => {
         </TouchableOpacity>
         {userList?.map((user) => (
           <UserProfile
-            key={user.uid}
+            key={user.id || user.uid || Math.random().toString()}
             username={user.prenoms}
             profileImg={
               user.profilePicUrl
@@ -64,5 +63,3 @@ const StoryBar = () => {
 };
 
 export default StoryBar;
-
-const styles = StyleSheet.create({});

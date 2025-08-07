@@ -18,6 +18,7 @@ import {
 import LottieView from "lottie-react-native";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -35,6 +36,7 @@ const SearchScreen = () => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const currentUser = getAuth().currentUser;
 
   const handleFilterChange = (filter: string) => {
@@ -86,6 +88,16 @@ const SearchScreen = () => {
 
     setLoading(false);
   };
+  
+  useEffect(() => {
+    // Delay mounting to ensure proper layout calculation
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   useEffect(() => {
     if (hasSearched && searchTerm.trim()) {
       handleSearch();
@@ -150,7 +162,7 @@ const SearchScreen = () => {
         showsVerticalScrollIndicator={false}
         className="px-4 space-y-4 mt-2 flex-1 h-ful"
       >
-        {loading && (
+        {loading && isMounted && (
           <Animated.View
             entering={FadeIn}
             exiting={FadeOut.duration(500)}
@@ -159,21 +171,40 @@ const SearchScreen = () => {
             <Text className="text-white text-center font-roboto-condensed-bold text-[20px] tracking-[-0.3px]">
               Recherche en cours...
             </Text>
-            <LottieView
-              source={require("@/assets/animations/Red Network Globe.json")}
-              style={{
-                width: 200,
-                height: 200,
-                backgroundColor: "transparent",
-                alignSelf: "center",
-                marginVertical: 30,
-              }}
-              autoPlay
-              loop
-            />
+            <View style={{ width: 200, height: 200, marginVertical: 30 }}>
+              {(() => {
+                try {
+                  return (
+                    <LottieView
+                      source={require("@/assets/animations/Red Network Globe.json")}
+                      style={{
+                        width: 200,
+                        height: 200,
+                        backgroundColor: "transparent",
+                        minWidth: 200,
+                        minHeight: 200,
+                      }}
+                      autoPlay
+                      loop
+                      resizeMode="contain"
+                      onAnimationFailure={(error) => {
+                        console.warn('Lottie animation failed:', error);
+                      }}
+                    />
+                  );
+                } catch (error) {
+                  console.warn('Lottie animation error:', error);
+                  return (
+                    <View style={{ width: 200, height: 200, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
+                      <ActivityIndicator size="large" color="#D32C1C" />
+                    </View>
+                  );
+                }
+              })()}
+            </View>
           </Animated.View>
         )}
-        {!loading && results.length === 0 && (
+        {!loading && results.length === 0 && isMounted && (
           <Animated.View
             entering={FadeIn.duration(600)}
             className="w-full h-[60vh] items-center justify-center flex-1 gap-3"
@@ -183,12 +214,36 @@ const SearchScreen = () => {
                 Aucun résultat trouvé.
               </Text>
             )}
-            <LottieView
-              source={require("@/assets/animations/Search File.json")}
-              style={{ width: 200, height: 200, alignSelf: "center" }}
-              autoPlay
-              loop
-            />
+            <View style={{ width: 200, height: 200 }}>
+              {(() => {
+                try {
+                  return (
+                    <LottieView
+                      source={require("@/assets/animations/Search File.json")}
+                      style={{ 
+                        width: 200, 
+                        height: 200,
+                        minWidth: 200,
+                        minHeight: 200,
+                      }}
+                      autoPlay
+                      loop
+                      resizeMode="contain"
+                      onAnimationFailure={(error) => {
+                        console.warn('Lottie animation failed:', error);
+                      }}
+                    />
+                  );
+                } catch (error) {
+                  console.warn('Lottie animation error:', error);
+                  return (
+                    <View style={{ width: 200, height: 200, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
+                      <Text className="text-white text-center">🔍</Text>
+                    </View>
+                  );
+                }
+              })()}
+            </View>
           </Animated.View>
         )}
         <Animated.View

@@ -23,10 +23,16 @@ export const useUserList = (): UserListResult => {
         const usersSnapshot = await getDocs(usersCollection);
         const usersList = usersSnapshot.docs.map(doc => ({
           id: doc.id,
+          uid: doc.id, // Ensure uid is also available for consistency
           ...doc.data()
         }));
         
-        setData(usersList);
+        // Filter out any potential duplicates and ensure unique IDs
+        const uniqueUsers = usersList.filter((user, index, self) => 
+          index === self.findIndex(u => u.id === user.id)
+        );
+        
+        setData(uniqueUsers);
       } catch (error) {
         console.error('Error fetching users:', error);
         setIsError(true);

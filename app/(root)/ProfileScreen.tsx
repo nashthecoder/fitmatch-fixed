@@ -1,6 +1,4 @@
 import { db, firebaseApp } from "@/config/firebase";
-import { useEmailAuth } from "@/customHooks/useEmailAuth";
-import { useGoogleSignIn } from "@/customHooks/useGoogleSignIn";
 import { updateUserData } from "@/helpers/firestore";
 import { RootState } from "@/store/rootReducer";
 import { setUser } from "@/store/slices/authSlice";
@@ -8,10 +6,10 @@ import { resetUserData, setUserData } from "@/store/slices/userSlice";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { deleteUser, getAuth } from "firebase/auth";
+import { deleteUser, getAuth, signOut } from "firebase/auth";
 import { deleteDoc, doc } from "firebase/firestore";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -27,13 +25,28 @@ import { useDispatch, useSelector } from "react-redux";
 const ProfileScreen = () => {
   const storage = getStorage(firebaseApp);
   const userData = useSelector((state: RootState) => state.user.data);
-  const { signOut: signOutGoogle } = useGoogleSignIn();
-  const { signOut: signOutEmail } = useEmailAuth();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
   const [confirmVisible, setConfirmVisible] = React.useState(false);
   const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const dispatch = useDispatch();
+
+  // Check authentication state on component mount
+  useEffect(() => {
+    const auth = getAuth();
+    
+    if (!auth.currentUser && !currentUser) {
+      console.log("No authenticated user found, redirecting to landing page");
+      router.replace("/Auth/LandingPage");
+      return;
+    }
+
+    if (!userData) {
+      console.log("No user data found in Redux store");
+      // Could fetch user data here if needed
+    }
+  }, [currentUser, userData]);
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
@@ -64,7 +77,9 @@ const ProfileScreen = () => {
         const downloadURL = await getDownloadURL(imageRef);
         console.log("uploaded >> ", downloadURL);
         await updateUserData({ profilePicUrl: downloadURL });
-        dispatch(setUserData({ ...userData, profilePicUrl: downloadURL }));
+        if (userData) {
+          dispatch(setUserData({ ...userData, profilePicUrl: downloadURL }));
+        }
       });
     } catch (error: any) {
       console.error("Full Firebase error:", error);
@@ -102,34 +117,38 @@ const ProfileScreen = () => {
           source={require("@/assets/images/logo.png")}
           className="w-[66] h-[43] mx-4 mt-4 self-start"
         />
-        <TouchableOpacity activeOpacity={0.67} onPress={pickImage}>
-          <Image
-            source={{ uri: userData.profilePicUrl }}
-            placeholder={require("@/assets/images/default-user-picture.png")}
-            className="h-24 w-24 rounded-full"
-            style={{
-              overflow: "hidden",
-              width: 120,
-              height: 120,
-              borderRadius: 60,
-              marginBottom: 16,
-            }}
-          />
-        </TouchableOpacity>
+        {userData && (
+          <>
+            <TouchableOpacity activeOpacity={0.67} onPress={pickImage}>
+              <Image
+                source={{ uri: userData.profilePicUrl }}
+                placeholder={require("@/assets/images/default-user-picture.png")}
+                className="h-24 w-24 rounded-full"
+                style={{
+                  overflow: "hidden",
+                  width: 120,
+                  height: 120,
+                  borderRadius: 60,
+                  marginBottom: 16,
+                }}
+              />
+            </TouchableOpacity>
 
-        <Text style={styles.name}>
-          {userData.prenoms} {userData.nom}
-        </Text>
-        <Text style={styles.email}>{userData.email}</Text>
+            <Text style={styles.name}>
+              {userData.prenoms} {userData.nom}
+            </Text>
+            <Text style={styles.email}>{userData.email}</Text>
 
-        {userData.totalPoints !== undefined && (
-          <Text style={styles.points}>🏆 Points: {userData.totalPoints}</Text>
-        )}
+            {userData.totalPoints !== undefined && (
+              <Text style={styles.points}>🏆 Points: {userData.totalPoints}</Text>
+            )}
 
-        {userData.percentage !== undefined && (
-          <Text style={styles.percentage}>
-            🎯 Completion: {userData.percentage}%
-          </Text>
+            {userData.percentage !== undefined && (
+              <Text style={styles.percentage}>
+                🎯 Completion: {userData.percentage}%
+              </Text>
+            )}
+          </>
         )}
         <TouchableOpacity
           className=" mx-4 items-center justify-center rounded-[16] bg-[#D32C1C] py-2 w-full mt-20"
@@ -175,14 +194,14 @@ const ProfileScreen = () => {
                     dispatch(setUser(null));
                     dispatch(resetUserData());
                     try {
-                      await signOutGoogle();
-                      await signOutEmail();
+                      const auth = getAuth();
+                      await signOut(auth);
                     } catch (e: any) {
-                      console.warn(e);
+                      console.warn("Logout error:", e);
                     }
                     setBusy(false);
                     router.dismissAll();
-                    router.dismissTo("/Auth/LandingPage");
+                    router.replace("/Auth/LandingPage");
                   }}
                   className="flex-1 py-3 bg-red-700 rounded-xl items-center"
                 >

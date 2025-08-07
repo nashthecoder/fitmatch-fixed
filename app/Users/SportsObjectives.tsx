@@ -42,10 +42,10 @@ const SportsObjectives = () => {
   };
 
   useEffect(() => {
-    if (userData.objectifDuCoeur && userData.objectifDuCoeur !== "") {
+    if (userData?.objectifDuCoeur && userData.objectifDuCoeur !== "") {
       router.replace("/Users/VideoChallenge");
     }
-  }, []);
+  }, [userData]);
 
   const handleSubmit = async () => {
     if (loading) return;
@@ -76,6 +76,16 @@ const SportsObjectives = () => {
       setLoading(false);
     }
   };
+
+  // Show loading if userData is not available
+  if (!userData) {
+    return (
+      <SafeAreaView className="flex flex-1 bg-dark h-full w-full items-center justify-center">
+        <ActivityIndicator size="large" color="#D32C1C" />
+        <Text className="text-white text-center mt-4">Chargement de vos données...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex flex-1 bg-dark h-full-w-full gap-2">

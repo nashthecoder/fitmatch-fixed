@@ -553,7 +553,7 @@ const Onboarding = () => {
           <TextInput
             className="bg-white font-roboto-bold"
             onChangeText={(text) => handleChange("pseudo", text)}
-            value={userData?.pseudo}
+            value={userData?.pseudo || ""}
           />
         </View>
 
@@ -565,7 +565,7 @@ const Onboarding = () => {
           <TextInput
             className="bg-white font-roboto-bold"
             onChangeText={(text) => handleChange("nom", text)}
-            value={userData?.nom}
+            value={userData?.nom || ""}
           />
         </View>
 
@@ -577,7 +577,7 @@ const Onboarding = () => {
           <TextInput
             className="bg-white font-roboto-bold"
             onChangeText={(text) => handleChange("prenoms", text)}
-            value={userData?.prenoms}
+            value={userData?.prenoms || ""}
           />
         </View>
 
