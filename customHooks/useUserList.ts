@@ -1,19 +1,46 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/config/firebaseConfig';
 
-const useUserList = () => {
-  const userList = useSelector((state: RootState) => state.user.userList);
-  const [loading, setLoading] = useState(false);
+interface UserListResult {
+  data: any[];
+  isLoading: boolean;
+  isError: boolean;
+}
+
+export const useUserList = (): UserListResult => {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
-    // Logic to fetch user list would go here
-    setLoading(false);
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true);
+        setIsError(false);
+        
+        const usersCollection = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersCollection);
+        const usersList = usersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        setData(usersList);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
-  return { userList, loading };
+  return {
+    data,
+    isLoading,
+    isError,
+  };
 };
-
-// Export both named and default
-export { useUserList };
-export default useUserList;

@@ -1,36 +1,51 @@
 import { useState } from 'react';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/config/firebaseConfig';
 
-const useEmailAuth = () => {
+interface EmailAuthResult {
+  user: any;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  error: string | null;
+}
+
+export const useEmailAuth = (): EmailAuthResult => {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
     try {
-      // Firebase email auth logic would go here
-      console.log('Email sign in:', email);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setLoading(true);
+      setError(null);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      setUser(result.user);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string) => {
-    setLoading(true);
     try {
-      // Firebase email signup logic would go here
-      console.log('Email sign up:', email);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setLoading(true);
+      setError(null);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      setUser(result.user);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  return { signIn, signUp, loading, error };
+  return {
+    user,
+    loading,
+    signIn,
+    signUp,
+    error,
+  };
 };
-
-// Export both named and default
-export { useEmailAuth };
-export default useEmailAuth;
