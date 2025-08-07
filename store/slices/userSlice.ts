@@ -9,6 +9,7 @@ export interface UserData {
   nom?: string;
   prenoms?: string;
   pseudo?: string;
+  bio?: string;
   naissance?: any; // Firestore Timestamp
   ville?: string;
   nationalite?: string;
@@ -18,6 +19,21 @@ export interface UserData {
   mesPhotos?: any[];
   mesVideos?: any[];
   userType?: string;
+  // User journey properties
+  weekendVibes?: string[];
+  personalityTraits?: string[];
+  personality?: string;
+  sportsChoices?: string[];
+  dietChoices?: string[];
+  diet?: string;
+  sportsObjectives?: string[];
+  objectifDuCoeur?: string;
+  sportExtreme?: string;
+  // Score and category properties
+  frequence?: number;
+  totalPoints?: number;
+  category?: string;
+  percentage?: number;
   // Add other user properties as needed
 }
 

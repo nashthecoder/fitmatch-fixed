@@ -20,9 +20,9 @@ const ScoreScreen = () => {
   const userData = useSelector((state: RootState) => state.user.data);
   console.log(
     "User data ",
-    userData.frequence,
-    userData.totalPoints,
-    userData.category
+    userData?.frequence,
+    userData?.totalPoints,
+    userData?.category
   );
 
   useEffect(() => {
@@ -65,7 +65,7 @@ const ScoreScreen = () => {
             entering={FadeInUp.delay(500).duration(1200)}
             className="text-center text-[24px] text-white tracking-[-0.3px] font-roboto-semicondensed-bold uppercase"
           >
-            {userData.category}
+            {userData?.category}
           </Animated.Text>
           <Text className="text-white text-center my-2">
             Le podium n’est pas loin ! A vous de jouer !

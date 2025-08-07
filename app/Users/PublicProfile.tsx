@@ -93,7 +93,7 @@ const PublicProfile = () => {
             style={{ fontSize: 32, letterSpacing: -0.3 }}
             className="text-white font-roboto-condensed"
           >
-            {userData.pseudo || `${userData.prenoms} ${userData.nom}`},{" "}
+            {userData?.pseudo || `${userData?.prenoms} ${userData?.nom}`},{" "}
             {calculateAge(userData?.naissance as Timestamp)}
           </Text>
           <Image
@@ -104,7 +104,7 @@ const PublicProfile = () => {
         <View className="w-[100vw] h-[100vw] bg-white/50">
           <View className="m-4 absolute top-2 left-0 right-0 flex-row justify-between">
             <CircularProgress
-              value={userData?.percentage}
+              value={userData?.percentage || 0}
               activeStrokeColor={"#f36c62"}
               inActiveStrokeColor="#37363b"
               activeStrokeWidth={10}

@@ -32,35 +32,35 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useSelector } from "react-redux";
 
+// Create a mapping of numbers to their corresponding labels
+const vibesMap: Record<number, string> = {
+  1: "Soirée entre amis",
+  2: "Voyages express",
+  3: "Chill total à la maison",
+  4: "Ateliers cuisine Healthy",
+  5: "Road-trip ou micro-avanture",
+  6: "Course d'obstacles, Spartan Race",
+  7: "Competiton sportive",
+  8: "Surf/Sport aquatique",
+  9: "Apéro brunch prolongé",
+  10: "Travail sur projets persos",
+  11: "Bar entre copains",
+  12: "Famille avant tout",
+  13: "Clubbing et nuits blanches",
+  14: "Shopping et flânerie",
+  15: "Sessions gaming",
+  16: "Shooting photo créatif",
+  17: "Netflix & cocooning",
+  18: "Rando et sport nature",
+  19: "Yoga, méditation et bien-être",
+};
+
 const WeekendVibes = () => {
   const [selectedList, setSelectedList] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const userData = useSelector((state: RootState) => state.user.data);
   const [weekendVibesLabels, setWeekendVibesLabels] = useState<string[]>([]);
   const handleChange = useHandleFormChange();
-
-  // Create a mapping of numbers to their corresponding labels
-  const vibesMap: Record<number, string> = {
-    1: "Soirée entre amis",
-    2: "Voyages express",
-    3: "Chill total à la maison",
-    4: "Ateliers cuisine Healthy",
-    5: "Road-trip ou micro-avanture",
-    6: "Course d'obstacles, Spartan Race",
-    7: "Competiton sportive",
-    8: "Surf/Sport aquatique",
-    9: "Apéro brunch prolongé",
-    10: "Travail sur projets persos",
-    11: "Bar entre copains",
-    12: "Famille avant tout",
-    13: "Clubbing et nuits blanches",
-    14: "Shopping et flânerie",
-    15: "Sessions gaming",
-    16: "Shooting photo créatif",
-    17: "Netflix & cocooning",
-    18: "Rando et sport nature",
-    19: "Yoga, méditation et bien-être",
-  };
 
   const handleSelect = (n: number) => {
     setSelectedList((prevList) => {
@@ -90,10 +90,10 @@ const WeekendVibes = () => {
   };
 
   useEffect(() => {
-    if (userData.weekendVibes && userData.weekendVibes.length > 0) {
+    if (userData?.weekendVibes && userData.weekendVibes.length > 0) {
       router.replace("/Users/SportsObjectives");
     }
-  }, []);
+  }, [userData?.weekendVibes]);
 
   return (
     <SafeAreaView className={`flex flex-1 bg-dark h-full-w-full gap-2`}>
