@@ -1,6 +1,6 @@
 import { Dimensions, Platform } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 // Define breakpoints for responsive design
 export const BREAKPOINTS = {

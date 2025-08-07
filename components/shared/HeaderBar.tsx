@@ -1,13 +1,14 @@
 import { AntDesign } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { Image, TouchableOpacity, View, useWindowDimensions } from "react-native";
-import { getResponsivePadding, getResponsiveSpacing, isDesktop, isTablet } from "@/helpers/responsive";
+import { Image, TouchableOpacity, View } from "react-native";
+import { isDesktop, isTablet } from "@/helpers/responsive";
+import { useResponsive } from "@/customHooks/useResponsive";
 import GearIcon from "../Icons/GearIcon";
 import HandShakeIcon from "../Icons/HandShakeIcon";
 
 const HeaderBar = () => {
-  const { width } = useWindowDimensions();
+  const { spacing } = useResponsive();
   
   // Responsive dimensions
   const getLogoSize = () => {
@@ -34,16 +35,20 @@ const HeaderBar = () => {
     return 8;
   };
 
+  const getHitSlop = () => ({ top: 8, bottom: 8, left: 8, right: 8 });
+
   return (
     <View 
       className="flex-row items-center justify-between absolute z-10 w-full overflow-hidden"
       style={{ 
         height: getHeaderHeight(),
         marginTop: getMarginTop(),
-        paddingHorizontal: isDesktop() ? 24 : isTablet() ? 20 : 16,
+        paddingHorizontal: spacing(16),
         maxWidth: isDesktop() ? 1200 : undefined,
         alignSelf: isDesktop() ? 'center' : 'stretch',
       }}
+      accessibilityRole="banner"
+      accessibilityLabel="Header navigation"
     >
       <Image
         source={require("@/assets/images/logo.png")}
@@ -53,19 +58,34 @@ const HeaderBar = () => {
       <View 
         className="flex-row items-center" 
         style={{ 
-          gap: isDesktop() ? 20 : isTablet() ? 16 : 12 
+          gap: spacing(12)
         }}
+        accessibilityRole="toolbar"
+        accessibilityLabel="Header actions"
       >
         <TouchableOpacity
-          hitSlop={8}
+          hitSlop={getHitSlop()}
           onPress={() => router.navigate("/(root)/Home/NewPost")}
+          accessibilityRole="button"
+          accessibilityLabel="Create new post"
+          accessibilityHint="Opens the new post creation screen"
         >
           <AntDesign name="plus" size={getIconSize()} color={"white"} />
         </TouchableOpacity>
-        <TouchableOpacity hitSlop={8}>
+        <TouchableOpacity 
+          hitSlop={getHitSlop()}
+          accessibilityRole="button"
+          accessibilityLabel="Partnerships"
+          accessibilityHint="View partnership options"
+        >
           <HandShakeIcon />
         </TouchableOpacity>
-        <TouchableOpacity hitSlop={8}>
+        <TouchableOpacity 
+          hitSlop={getHitSlop()}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          accessibilityHint="Open app settings"
+        >
           <GearIcon />
         </TouchableOpacity>
       </View>
@@ -73,4 +93,4 @@ const HeaderBar = () => {
   );
 };
 
-export default HeaderBar;
+export default React.memo(HeaderBar);
