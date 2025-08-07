@@ -100,33 +100,95 @@ FitMatch transforme la recherche d'un partenaire d'entraînement en une expérie
 
 ## 🚀 Installation et Développement
 
+### ⚡ Démarrage rapide
+
+Pour les développeurs expérimentés :
+```bash
+git clone https://github.com/nashthecoder/fitmatch-fixed.git
+cd fitmatch-fixed
+npm install
+npx expo start
+```
+
 ### Prérequis
-- Node.js (version 18+)
-- npm ou yarn
-- Expo CLI
-- Android Studio (pour Android) ou Xcode (pour iOS)
 
-### Installation
+Avant de commencer, assurez-vous d'avoir installé :
 
-1. **Cloner le repository**
+- **Node.js** (version 18.0.0 ou supérieure)
+  ```bash
+  node --version  # Doit afficher v18.x.x ou plus
+  ```
+- **npm** (généralement installé avec Node.js)
+  ```bash
+  npm --version   # Doit afficher 8.x.x ou plus
+  ```
+- **Git** pour cloner le repository
+- **Expo CLI** (sera installé automatiquement via npx)
+- **Android Studio** (pour Android) ou **Xcode** (pour iOS) - optionnel pour le développement
+
+### Installation pas à pas
+
+1. **Vérifier les prérequis**
+   ```bash
+   node --version && npm --version
+   ```
+
+2. **Cloner le repository**
    ```bash
    git clone https://github.com/nashthecoder/fitmatch-fixed.git
    cd fitmatch-fixed
    ```
 
-2. **Installer les dépendances**
+3. **Installer les dépendances**
    ```bash
    npm install
    ```
+   
+   Si vous rencontrez des erreurs, essayez :
+   ```bash
+   npm install --legacy-peer-deps
+   ```
 
-3. **Configuration Firebase**
-   - Placer `google-services.json` à la racine (Android)
-   - Placer `GoogleService-Info.plist` à la racine (iOS)
+4. **Installer les dépendances manquantes** (si nécessaire)
+   ```bash
+   npx expo install expo-image-picker expo-video-thumbnails expo-network react-native-web
+   npm install react-native-video react-native-ui-datepicker
+   ```
 
-4. **Démarrer le serveur de développement**
+5. **Configuration Firebase**
+   - Placer `google-services.json` à la racine du projet (Android)
+   - Placer `GoogleService-Info.plist` à la racine du projet (iOS)
+   
+   ⚠️ **Important**: Ces fichiers sont requis pour Firebase mais ne sont pas inclus dans le repository pour des raisons de sécurité.
+
+6. **Vérifier l'installation**
+   ```bash
+   npm run lint  # Vérifier le code (des warnings sont normaux)
+   ```
+
+8. **Vérifier l'installation (optionnel)**
+   ```bash
+   chmod +x scripts/verify-setup.sh
+   ./scripts/verify-setup.sh
+   ```
+   
+   Ce script vérifie que tous les prérequis sont installés correctement.
+
+9. **Démarrer le serveur de développement**
    ```bash
    npx expo start
    ```
+   
+   Le serveur Metro devrait démarrer et afficher un QR code.
+
+### Vérification de l'installation
+
+Après l'installation, vous devriez voir :
+- ✅ Metro bundler en cours d'exécution sur `http://localhost:8081`
+- ✅ QR code affiché dans le terminal
+- ✅ Options pour ouvrir l'app (a/i/w dans le terminal)
+
+Si le serveur démarre avec succès, votre installation est correcte !
 
 ### Options de lancement
 
@@ -144,6 +206,82 @@ npm run ios        # Build et lance sur iOS
 npm run web        # Lance la version web
 npm run lint       # Vérifie la qualité du code
 ```
+
+## 🛠 Résolution des problèmes
+
+### Problèmes courants et solutions
+
+**1. Erreur "Cannot find module 'tailwind.config'"**
+```bash
+# Solution : Le fichier tailwind.config.js est requis
+# Il devrait être créé automatiquement, sinon créez-le avec :
+echo "module.exports = { content: ['./app/**/*.{js,jsx,ts,tsx}', './components/**/*.{js,jsx,ts,tsx}'], presets: [require('nativewind/preset')], theme: { extend: {} }, plugins: [] }" > tailwind.config.js
+```
+
+**2. Erreurs de dépendances manquantes**
+```bash
+# Installer toutes les dépendances optionnelles
+npx expo install expo-image-picker expo-video-thumbnails expo-network react-native-web
+npm install react-native-video react-native-ui-datepicker
+```
+
+**3. Erreur "Metro bundler failed to start"**
+```bash
+# Nettoyer le cache et redémarrer
+npx expo start --clear
+# ou
+rm -rf node_modules package-lock.json && npm install
+```
+
+**4. Erreurs de Firebase**
+- Vérifiez que `google-services.json` et `GoogleService-Info.plist` sont à la racine
+- Assurez-vous que votre projet Firebase est correctement configuré
+
+**5. Problèmes avec l'émulateur/simulateur**
+```bash
+# Pour Android (vérifier qu'Android Studio est installé)
+npx expo run:android
+
+# Pour iOS (macOS uniquement, vérifier que Xcode est installé)
+npx expo run:ios
+```
+
+**6. Problèmes de performance ou de cache**
+```bash
+# Réinitialiser complètement le projet
+rm -rf node_modules/.cache
+npx expo start --clear
+```
+
+### Vérification de l'environnement
+
+Pour diagnostiquer les problèmes, utilisez :
+```bash
+npx expo doctor  # Vérifier la configuration Expo
+npm ls           # Vérifier les dépendances installées
+node --version   # Vérifier la version Node.js
+```
+
+### Fichiers de configuration requis
+
+Les fichiers suivants sont automatiquement créés ou requis :
+
+**Fichiers de configuration :**
+- `tailwind.config.js` - Configuration TailwindCSS pour NativeWind
+- `metro.config.js` - Configuration Metro bundler
+- `babel.config.js` - Configuration Babel
+- `tsconfig.json` - Configuration TypeScript
+
+**Custom Hooks créés :**
+- `customHooks/useIsKeyboardVisible.ts` - Détection du clavier virtuel
+- `customHooks/useEmailAuth.ts` - Authentification par email
+- `customHooks/useGoogleSignIn.ts` - Authentification Google
+- `customHooks/useUserList.ts` - Liste des utilisateurs
+- `customHooks/useHandleFormChange copy.ts` - Gestion des formulaires
+
+**Fichiers Firebase requis :**
+- `google-services.json` (Android) - À placer à la racine
+- `GoogleService-Info.plist` (iOS) - À placer à la racine
 
 ## 📱 Structure du Projet
 

@@ -40,3 +40,13 @@ yarn-error.*
 app-example
 
 .npmrc
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
