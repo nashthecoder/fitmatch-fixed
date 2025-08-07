@@ -1,5 +1,6 @@
 import { sendLike, unlikeProfile } from "@/helpers/firestoreLikesActions";
 import { calculateAge } from "@/helpers/timeAgo";
+import { getResponsiveCardWidth, getResponsiveFontSize, isDesktop, isTablet } from "@/helpers/responsive";
 import { UserData } from "@/store/slices/userSlice";
 
 // Import your functions
@@ -24,6 +25,22 @@ const UserCard = ({ user: item, index }: { user: UserData; index: number }) => {
   console.log(item);
 
   if (!item) return null;
+
+  // Responsive dimensions
+  const getCardWidth = () => {
+    if (isDesktop()) return Math.min(300, width * 0.25);
+    if (isTablet()) return width * 0.4;
+    return width * 0.45;
+  };
+
+  const getCardHeight = () => {
+    const cardWidth = getCardWidth();
+    return cardWidth * 1.1; // Maintain aspect ratio
+  };
+
+  const getNameFontSize = () => {
+    return getResponsiveFontSize(22);
+  };
 
   const handleLike = async () => {
     try {
@@ -66,7 +83,11 @@ const UserCard = ({ user: item, index }: { user: UserData; index: number }) => {
   return (
     <Animated.View
       entering={FadeInDown.delay(150 * index)}
-      className="w-[45vw] bg-white rounded-[20px] overflow-hidden my-2"
+      className="bg-white rounded-[20px] overflow-hidden my-2 mx-1"
+      style={{ 
+        width: getCardWidth(),
+        maxWidth: isDesktop() ? 320 : undefined,
+      }}
     >
       <TouchableOpacity
         onPress={() =>
@@ -79,7 +100,7 @@ const UserCard = ({ user: item, index }: { user: UserData; index: number }) => {
         <ImageBackground
           source={{ uri: item?.profilePicUrl }}
           style={{
-            height: width * 0.5,
+            height: getCardHeight(),
             margin: 2,
             borderRadius: 18,
             overflow: "hidden",
@@ -94,7 +115,10 @@ const UserCard = ({ user: item, index }: { user: UserData; index: number }) => {
             }}
           />
           <View className="absolute bottom-2 flex-1 w-full">
-            <Text className="text-wrap mx-4 text-white text-[22px] font-roboto-condensed-bold">
+            <Text 
+              className="text-wrap mx-4 text-white font-roboto-condensed-bold"
+              style={{ fontSize: getNameFontSize() }}
+            >
               {item?.nom} {item?.prenoms},
               {calculateAge(item?.naissance as Timestamp)}
             </Text>
@@ -102,15 +126,23 @@ const UserCard = ({ user: item, index }: { user: UserData; index: number }) => {
               <TouchableOpacity onPress={handleUnlike}>
                 <Entypo
                   name="cross"
-                  size={35}
+                  size={isDesktop() ? 40 : isTablet() ? 37 : 35}
                   color={isLiked ? "gray" : "red"}
                 />
               </TouchableOpacity>
               <View
-                style={{ width: 2, height: 24, backgroundColor: "#a24646" }}
+                style={{ 
+                  width: 2, 
+                  height: isDesktop() ? 28 : isTablet() ? 26 : 24, 
+                  backgroundColor: "#a24646" 
+                }}
               />
               <TouchableOpacity onPress={handleLike}>
-                <Entypo name="heart" size={30} color="red" />
+                <Entypo 
+                  name="heart" 
+                  size={isDesktop() ? 35 : isTablet() ? 32 : 30} 
+                  color="red" 
+                />
               </TouchableOpacity>
             </View>
           </View>
