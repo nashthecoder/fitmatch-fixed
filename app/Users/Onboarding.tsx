@@ -5,16 +5,12 @@ import { RootState } from "@/store/rootReducer";
 import dayjs from "dayjs";
 
 import {
-  Fontisto,
   Ionicons,
-  MaterialIcons,
   Octicons,
 } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import * as VideoThumbnails from "expo-video-thumbnails";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -39,7 +35,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { useEmailAuth } from "@/customHooks/useEmailAuth";
 import { useHandleFormChange } from "@/customHooks/useHandleFormChange copy";
-import { frenchCities, frenchCountries } from "@/data/cities";
+import { frenchCities } from "@/data/cities";
 import { createUserIfNotExists } from "@/helpers/firestore";
 import { setCreatingUserData } from "@/store/slices/authSlice";
 import { getAuth } from "firebase/auth";
@@ -48,63 +44,20 @@ import {
   getStorage,
   ref,
   uploadBytes,
-  uploadBytesResumable,
 } from "firebase/storage";
-import Video from "react-native-video";
 
-const lightDatePickerStyles = {
-  container: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    padding: 10,
-  },
-  header: {
-    backgroundColor: "#000",
-  },
-  headerLabel: {
-    color: "#000000",
-    fontWeight: "bold",
-  },
-  weekDayLabel: {
-    color: "#333333",
-  },
-  dayText: {
-    color: "#000000",
-  },
-  day: {
-    borderColor: "#ccc",
-  },
-  selectedDay: {
-    backgroundColor: "#007aff", // iOS blue
-    borderRadius: 5,
-  },
-  selectedDayText: {
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
-  disabledDayText: {
-    color: "#d3d3d3", // light gray to show it's disabled
-  },
-  arrow: {
-    tintColor: "#000",
-  },
-};
-
-const initalValues = {
+const initialValues = {
   nom: "",
   prenoms: "",
+  pseudo: "",
   naissance: "",
   ville: "",
-  nationalite: "",
-  photosUrl: [],
-  videosUrl: [],
   sex: 0,
 };
 
-export type PhotoVideoMediaType = {
+export type PhotoMediaType = {
   uri: string;
   id: string;
-  thumbnail?: any;
 };
 
 const Onboarding = () => {
@@ -113,189 +66,57 @@ const Onboarding = () => {
     (state: RootState) => state.auth.creatingUserData
   );
   const [selected, setSelected] = useState(0);
-  const [showCountryModal, setShowCountryModal] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
-  const [filteredCountries, setFilteredCountries] = useState<string[]>([]);
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
+  const [filteredCities, setFilteredCities] = useState<string[]>([]);
   const [showOverlay, setShowOverlay] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [accepted, setAccepted] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState(0);
   const [signUpForm, setSignUpForm] = useState({
     email: "",
     password: "",
     confirmPassword: "",
   });
 
-  const [selectedImages, setSelectedImages] = useState<PhotoVideoMediaType[]>(
-    []
-  );
-  const [selectedVideos, setSelectedVideos] = useState<PhotoVideoMediaType[]>(
-    []
-  );
+  const [selectedImage, setSelectedImage] = useState<PhotoMediaType | null>(null);
 
   const userData = useSelector((state: RootState) => state.user.data);
-  const [showCityModal, setShowCityModal] = useState(false);
-  const [citySearch, setCitySearch] = useState("");
-  const [filteredCities, setFilteredCities] = useState<string[]>([]);
-
   const [showDatepicker, setShowDatepicker] = useState(false);
-
   const [showWelcome, setShowWelcome] = useState(true);
   const [showPrompt, setShowPrompt] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const [currentVideo, setCurrentVideo] = useState<any>();
-  const playerRef = useRef(null);
   const { error, signIn, signOut, loading, signUp } = useEmailAuth();
 
   const storage = getStorage();
 
-  // Validate file before upload
-  const validateFile = async (uri: string, type: 'image' | 'video'): Promise<boolean> => {
+  // Simplified photo upload for onboarding - single photo only
+  const uploadPhoto = async (userId: string, photo: PhotoMediaType): Promise<string> => {
     try {
-      const response = await fetch(uri);
+      const response = await fetch(photo.uri);
       const blob = await response.blob();
       
-      const maxSize = type === 'image' ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for videos
-      
+      const maxSize = 10 * 1024 * 1024; // 10MB max
       if (blob.size > maxSize) {
-        Toast.show({
-          type: "error",
-          text1: "Fichier trop volumineux",
-          text2: `Taille maximale autorisée: ${type === 'image' ? '10MB' : '50MB'}`,
-          visibilityTime: 5000,
-        });
-        return false;
+        throw new Error("Photo trop volumineuse. Taille maximale: 10MB");
       }
+
+      const timestamp = Date.now();
+      const photoFilename = `profile_${timestamp}_${photo.id}.jpg`;
+      const photoRef = ref(storage, `users/${userId}/photos/${photoFilename}`);
+
+      const uploadResult = await uploadBytes(photoRef, blob, {
+        contentType: "image/jpeg"
+      });
       
-      return true;
+      return await getDownloadURL(uploadResult.ref);
     } catch (error) {
-      console.error('File validation error:', error);
-      return false;
+      console.error("Photo upload failed:", error);
+      throw error;
     }
-  };
-
-  const uploadMedia = async (
-    userId: string,
-    mediaItems: PhotoVideoMediaType[],
-    folder: "mesPhotos" | "mesVideos"
-  ): Promise<PhotoVideoMediaType[]> => {
-    const uploadPromises = mediaItems.map(async (mediaItem) => {
-      try {
-        // Get blob from URI without encoding issues
-        let blob: Blob;
-        
-        if (Platform.OS === 'web') {
-          // For web, create blob directly from fetch to avoid data URL issues
-          const response = await fetch(mediaItem.uri);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch media: ${response.statusText}`);
-          }
-          blob = await response.blob();
-        } else {
-          // For mobile platforms
-          const response = await fetch(mediaItem.uri);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch media: ${response.statusText}`);
-          }
-          blob = await response.blob();
-        }
-        
-        const maxSize = folder === "mesPhotos" ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for photos, 50MB for videos
-        if (blob.size > maxSize) {
-          throw new Error(`Fichier trop volumineux. Taille maximale: ${folder === "mesPhotos" ? "10MB" : "50MB"}`);
-        }
-
-        // Create a clean filename without special characters
-        const timestamp = Date.now();
-        const fileExtension = getFileExtension(mediaItem.uri);
-        const mediaFilename = `${folder}_${timestamp}_${mediaItem.id}.${fileExtension}`;
-        
-        const mediaRef = ref(
-          storage,
-          `users/${userId}/${folder}/${mediaFilename}`
-        );
-
-        console.log(`Uploading ${folder} file: ${mediaFilename}, size: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
-
-        // Upload main media file using uploadBytes (better CORS compatibility)
-        const uploadResult = await uploadBytes(mediaRef, blob, {
-          contentType: blob.type || (folder === "mesPhotos" ? "image/jpeg" : "video/mp4")
-        });
-        
-        const mediaUrl = await getDownloadURL(uploadResult.ref);
-
-        // Upload thumbnail if it exists
-        let thumbnailUrl = null;
-        if (mediaItem.thumbnail) {
-          try {
-            const thumbFilename = `thumb_${mediaFilename}`;
-            const thumbRef = ref(
-              storage,
-              `users/${userId}/${folder}/thumbs/${thumbFilename}`
-            );
-
-            const thumbResponse = await fetch(mediaItem.thumbnail);
-            if (thumbResponse.ok) {
-              const thumbBlob = await thumbResponse.blob();
-              
-              // Limit thumbnail size to 2MB
-              if (thumbBlob.size <= 2 * 1024 * 1024) {
-                const thumbUploadResult = await uploadBytes(thumbRef, thumbBlob, {
-                  contentType: "image/jpeg"
-                });
-                thumbnailUrl = await getDownloadURL(thumbUploadResult.ref);
-              } else {
-                console.warn('Thumbnail too large, skipping');
-              }
-            }
-          } catch (thumbError) {
-            console.warn('Thumbnail upload failed, continuing without:', thumbError);
-          }
-        }
-
-        return {
-          id: mediaItem.id,
-          uri: mediaUrl,
-          thumbnail: thumbnailUrl,
-        };
-      } catch (error) {
-        console.error(`Failed to upload ${folder} item:`, error);
-        throw error;
-      }
-    });
-
-    return Promise.all(uploadPromises);
-  };
-
-  // Helper function to get file extension
-  const getFileExtension = (uri: string): string => {
-    // Handle blob URIs and data URIs
-    if (uri.startsWith('blob:') || uri.startsWith('data:')) {
-      // For blob/data URIs, default to appropriate extension
-      return 'jpg';
-    }
-    
-    // Extract extension from regular file URIs
-    const parts = uri.split('.');
-    const extension = parts[parts.length - 1];
-    
-    // Common image/video extensions
-    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'];
-    const normalizedExt = extension.toLowerCase();
-    
-    return validExtensions.includes(normalizedExt) ? normalizedExt : 'jpg';
-  };
-
-  const handleVideoPress = (videoUri: string) => {
-    setCurrentVideo(videoUri);
-  };
-
-  const closePlayer = () => {
-    setCurrentVideo(null);
   };
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
@@ -304,14 +125,16 @@ const Onboarding = () => {
   useEffect(() => {
     setTimeout(() => {
       setShowWelcome(false);
-    }, 5000);
-    setSelected(userData?.sex ?? initalValues.sex);
+    }, 3000); // Reduced welcome time
+    setSelected(userData?.sex ?? initialValues.sex);
+    // Redirect to sport choice if basic personal data is complete
     if (userData?.personalData === true) router.replace("/Users/SportChoice");
     if (currentUser && showWelcome) {
       Toast.show({
         type: "success",
         text1: "Bienvenue " + (currentUser.displayName ?? currentUser.email),
-        text2: "Veuillez remplir vos données personnels",
+        text2: "Complétez vos informations de base",
+        visibilityTime: 3000,
       });
     }
   }, []);
@@ -320,157 +143,39 @@ const Onboarding = () => {
     handleChange("sex", selected);
   }, [selected]);
 
-  const pickImage = async (id: number) => {
+  const pickImage = async () => {
     // Request permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
-        "Permission required",
-        "Sorry, we need camera roll permissions to make this work!"
+        "Permission requise",
+        "Nous avons besoin d'accéder à votre galerie photo!"
       );
       return;
     }
 
     // Launch image picker
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"], // Fixed mediaTypes
-      allowsEditing: false,
-      aspect: [4, 3],
-      quality: 0.8, // Reduce quality to compress images
-      allowsMultipleSelection: true,
-      selectionLimit: 2,
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1], // Square aspect ratio for profile photos
+      quality: 0.8,
+      allowsMultipleSelection: false,
     });
 
-    if (!result.canceled) {
-      const newImages = result.assets.map((asset) => ({
-        uri: asset.uri,
+    if (!result.canceled && result.assets[0]) {
+      const newImage = {
+        uri: result.assets[0].uri,
         id: Math.random().toString(36).substring(7),
-      }));
+      };
 
-      // Validate all selected images
-      const validationPromises = newImages.map(img => validateFile(img.uri, 'image'));
-      const validationResults = await Promise.all(validationPromises);
-      
-      const validImages = newImages.filter((_, index) => validationResults[index]);
-      
-      if (validImages.length === 0) {
-        Toast.show({
-          type: "error",
-          text1: "Aucune image valide",
-          text2: "Toutes les images sélectionnées sont trop volumineuses",
-        });
-        return;
-      }
-
-      setSelectedImages((prevImages) => {
-        // If user selected only one image, replace at the specified id
-        if (validImages.length === 1) {
-          const updatedImages = [...prevImages];
-          updatedImages[id] = validImages[0];
-          return updatedImages;
-        }
-        // If user selected two images, replace the entire array
-        else if (validImages.length === 2) {
-          return validImages;
-        }
-        // Fallback (shouldn't happen due to selectionLimit)
-        return prevImages;
-      });
-    }
-  };
-
-  const pickVideo = async (id: number) => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission required",
-        "Sorry, we need camera roll permissions!"
-      );
-      return;
-    }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["videos"],
-      allowsEditing: false,
-      aspect: [4, 3],
-      quality: 0.7, // Reduce quality to compress videos
-      allowsMultipleSelection: true,
-      selectionLimit: 2,
-    });
-
-    if (!result.canceled) {
-      // Process each video to get thumbnails
-      const processedVideos = await Promise.all(
-        result.assets.map(async (asset) => {
-          // Validate video file size first
-          const isValid = await validateFile(asset.uri, 'video');
-          if (!isValid) {
-            return null;
-          }
-
-          try {
-            // Check if we're on web platform
-            let thumbnailUri = null;
-            
-            if (Platform.OS !== 'web') {
-              const { uri } = await VideoThumbnails.getThumbnailAsync(asset.uri, {
-                time: 1000, // Get thumbnail at 1 second
-                headers: {
-                  // Cloudinary-style crop (if using a CDN)
-                  "X-Crop": "square",
-                },
-              });
-              thumbnailUri = uri;
-            }
-            
-            return {
-              uri: asset.uri,
-              thumbnail: thumbnailUri,
-              id: Math.random().toString(36).substring(7),
-            };
-          } catch (e) {
-            console.warn("Failed to generate thumbnail", e);
-            return {
-              uri: asset.uri,
-              thumbnail: null,
-              id: Math.random().toString(36).substring(7),
-            };
-          }
-        })
-      );
-
-      // Filter out null results (invalid files)
-      const validVideos = processedVideos.filter(video => video !== null);
-      
-      if (validVideos.length === 0) {
-        Toast.show({
-          type: "error",
-          text1: "Aucune vidéo valide",
-          text2: "Toutes les vidéos sélectionnées sont trop volumineuses",
-        });
-        return;
-      }
-
-      setSelectedVideos((prev) => {
-        if (validVideos.length === 1) {
-          const updated = [...prev];
-          updated[id] = validVideos[0];
-          return updated;
-        }
-        return validVideos;
-      });
+      setSelectedImage(newImage);
     }
   };
   return (
     <SafeAreaView className={`flex flex-1 bg-dark h-full-w-full gap-2`}>
       {busy && (
         <View className="absolute flex-1 z-20 top-0 bottom-0 left-0 right-0 items-center justify-center bg-black/80">
-          {/* <BlurView
-            tint="dark"
-            reducedTransparencyFallbackColor="black"
-            blurRadius={15}
-            style={{ ...StyleSheet.absoluteFillObject }}
-          /> */}
           <Image
             source={require("@/assets/images/logo.png")}
             className="w-[200px] h-[180px] mx-4 mt-4"
@@ -489,18 +194,23 @@ const Onboarding = () => {
           className="w-[66] h-[43] mx-4 mt-4"
           resizeMode="cover"
         />
-        <Text className="text-white tracking-[-0.3px] text-center font-roboto-condensed text-[20px] mb-4">
-          Informations personnelles
+        <Text className="text-white tracking-[-0.3px] text-center font-roboto-condensed text-[24px] mb-4">
+          Créons votre profil FitMatch
         </Text>
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Tu es{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
+        <Text className="text-white/70 tracking-[-0.3px] text-center font-roboto-condensed text-[16px] mb-6 mx-4">
+          Quelques informations de base pour commencer votre aventure
+        </Text>
+
+        {/* Gender Selection */}
+        <View className="bg-[#2E2C2C] px-6 py-4 mx-4 rounded-lg">
+          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px] mb-3">
+            Vous êtes{" "}
+            <Text className="text-red font-roboto-bold text-[16px]"> *</Text>
           </Text>
-          <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center justify-around">
             <TouchableOpacity
               activeOpacity={0.7}
-              className="flex-row items-center my-2 gap-2"
+              className="flex-row items-center gap-2"
               onPress={() => setSelected(1)}
             >
               {selected === 1 ? (
@@ -508,14 +218,14 @@ const Onboarding = () => {
               ) : (
                 <View className="w-[14] h-[14] rounded-full bg-white" />
               )}
-              <Text className="text-white font-roboto-condensed text-[13px] tracking-[-0.3]">
+              <Text className="text-white font-roboto-condensed text-[14px] tracking-[-0.3]">
                 Homme
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               activeOpacity={0.7}
-              className="flex-row items-center my-2 gap-2"
+              className="flex-row items-center gap-2"
               onPress={() => setSelected(2)}
             >
               {selected === 2 ? (
@@ -523,14 +233,14 @@ const Onboarding = () => {
               ) : (
                 <View className="w-[14] h-[14] rounded-full bg-white" />
               )}
-              <Text className="text-white font-roboto-condensed text-[13px] tracking-[-0.3]">
+              <Text className="text-white font-roboto-condensed text-[14px] tracking-[-0.3]">
                 Femme
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               activeOpacity={0.7}
-              className="flex-row items-center my-2 gap-2"
+              className="flex-row items-center gap-2"
               onPress={() => setSelected(3)}
             >
               {selected === 3 ? (
@@ -538,56 +248,48 @@ const Onboarding = () => {
               ) : (
                 <View className="w-[14] h-[14] rounded-full bg-white" />
               )}
-              <Text className="text-white font-roboto-condensed text-[13px] tracking-[-0.3]">
+              <Text className="text-white font-roboto-condensed text-[14px] tracking-[-0.3]">
                 Autre
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
+        {/* Name Fields */}
+        <View className="bg-[#2E2C2C] px-6 py-4 mx-4 rounded-lg">
+          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px] mb-2">
             Pseudo{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
+            <Text className="text-red font-roboto-bold text-[16px]"> *</Text>
           </Text>
           <TextInput
-            className="bg-white font-roboto-bold"
+            className="bg-white font-roboto-bold p-3 rounded-lg"
+            placeholder="Votre pseudo FitMatch"
             onChangeText={(text) => handleChange("pseudo", text)}
             value={userData?.pseudo}
           />
         </View>
 
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Nom{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
+        <View className="bg-[#2E2C2C] px-6 py-4 mx-4 rounded-lg">
+          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px] mb-2">
+            Prénom{" "}
+            <Text className="text-red font-roboto-bold text-[16px]"> *</Text>
           </Text>
           <TextInput
-            className="bg-white font-roboto-bold"
-            onChangeText={(text) => handleChange("nom", text)}
-            value={userData?.nom}
-          />
-        </View>
-
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Prénom(s){" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
-          </Text>
-          <TextInput
-            className="bg-white font-roboto-bold"
+            className="bg-white font-roboto-bold p-3 rounded-lg"
+            placeholder="Votre prénom"
             onChangeText={(text) => handleChange("prenoms", text)}
             value={userData?.prenoms}
           />
         </View>
 
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Né(e) le{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
+        {/* Birth Date */}
+        <View className="bg-[#2E2C2C] px-6 py-4 mx-4 rounded-lg">
+          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px] mb-2">
+            Date de naissance{" "}
+            <Text className="text-red font-roboto-bold text-[16px]"> *</Text>
           </Text>
           <TouchableOpacity
-            className="bg-white h-12 w-full flex-row items-center justify-between px-2"
+            className="bg-white h-12 w-full flex-row items-center justify-between px-3 rounded-lg"
             activeOpacity={0.67}
             onPress={() => {
               if (!showDatepicker)
@@ -595,20 +297,20 @@ const Onboarding = () => {
                   type: "info",
                   text1: "Info",
                   text2: "Vous devez avoir plus de 18 ans!",
-                  text2Style: { fontSize: 15 },
-                  text1Style: { fontSize: 16 },
+                  visibilityTime: 3000,
                 });
               setShowDatepicker(!showDatepicker);
             }}
           >
             <Text className="font-roboto-bold">
-              {userData?.naissance?.toLocaleString().split(" ")[0]}
+              {userData?.naissance?.toLocaleDateString() || "Sélectionnez votre date de naissance"}
             </Text>
             <Ionicons name={"calendar"} size={25} color={"rgba(0,0,0,0.7)"} />
           </TouchableOpacity>
         </View>
+
         {showDatepicker && (
-          <View className="p-4 bg-[white] m-4">
+          <View className="p-4 bg-white m-4 rounded-lg">
             <DateTimePicker
               maxDate={dayjs().subtract(18, "years").toDate()}
               minDate={dayjs().subtract(100, "years").toDate()}
@@ -616,7 +318,6 @@ const Onboarding = () => {
               date={parseDateType(userData?.naissance)}
               onChange={({ date }) => {
                 setShowDatepicker(false);
-
                 handleChange("naissance", date);
               }}
               styles={{
@@ -642,12 +343,11 @@ const Onboarding = () => {
                 },
                 button_prev_image: { tintColor: "black" },
                 button_next_image: { tintColor: "black" },
-
                 day_label: { color: "black", fontWeight: "bold" },
                 outside_label: { color: "gray" },
                 disabled_label: { color: "lightgray" },
                 selected: {
-                  backgroundColor: "#007aff", // iOS blue
+                  backgroundColor: "#007aff",
                   borderRadius: "50%",
                 },
                 selected_label: { color: "white" },
@@ -656,23 +356,25 @@ const Onboarding = () => {
           </View>
         )}
 
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Où habites-tu?{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
+        {/* City Selection */}
+        <View className="bg-[#2E2C2C] px-6 py-4 mx-4 rounded-lg">
+          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px] mb-2">
+            Votre ville{" "}
+            <Text className="text-red font-roboto-bold text-[16px]"> *</Text>
           </Text>
           <TouchableOpacity
-            className="bg-white h-12 w-full flex-row items-center justify-between px-2"
+            className="bg-white h-12 w-full flex-row items-center justify-between px-3 rounded-lg"
             activeOpacity={0.67}
             onPress={() => setShowCityModal(true)}
           >
             <Text className="font-roboto-bold text-black">
-              {userData?.ville ?? "Sélectionne une ville"}
+              {userData?.ville ?? "Sélectionnez votre ville"}
             </Text>
             <Ionicons name="location" size={25} color={"rgba(0,0,0,0.7)"} />
           </TouchableOpacity>
         </View>
 
+        {/* City Modal */}
         <Modal
           visible={showCityModal}
           animationType="slide"
@@ -682,7 +384,7 @@ const Onboarding = () => {
           <View className="flex-1 bg-black/50 justify-center items-center px-4">
             <View className="bg-[#0f0e0c] w-full rounded-xl p-4 h-[80%]">
               <Text className="text-lg font-roboto-light mb-4 text-white uppercase">
-                Sélectionne ta ville
+                Sélectionnez votre ville
               </Text>
               <TextInput
                 className="border bg-gray-300 px-3 py-2 rounded-full mb-4 text-black font-roboto"
@@ -722,210 +424,52 @@ const Onboarding = () => {
           </View>
         </Modal>
 
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Nationalité{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
+        {/* Profile Photo */}
+        <View className="bg-[#2E2C2C] px-6 py-4 mx-4 rounded-lg">
+          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px] mb-3">
+            Photo de profil{" "}
+            <Text className="text-red font-roboto-bold text-[16px]"> *</Text>
+          </Text>
+          <Text className="text-white/70 tracking-[-0.3px] font-roboto-condensed text-[12px] mb-3">
+            Ajoutez une belle photo de vous pour commencer. Vous pourrez en ajouter d'autres plus tard.
           </Text>
           <TouchableOpacity
-            className="bg-white h-12 w-full flex-row items-center justify-between px-2"
-            activeOpacity={0.67}
-            onPress={() => setShowCountryModal(true)}
+            className="rounded-[16px] bg-[#888686] items-center justify-center w-full h-[200px] overflow-hidden"
+            onPress={pickImage}
           >
-            <Text className="font-roboto-bold text-black">
-              {userData?.nationalite ?? "Sélectionne une nationalité"}
-            </Text>
-            <Ionicons name="flag" size={25} color={"rgba(0,0,0,0.7)"} />
-          </TouchableOpacity>
-        </View>
-        <Modal
-          visible={showCountryModal}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setShowCountryModal(false)}
-        >
-          <View className="flex-1 bg-black/50 justify-center items-center px-4">
-            <View className="bg-[#0f0e0c] w-full rounded-xl p-4 h-[80%]">
-              <Text className="text-lg font-roboto-light mb-4 text-white uppercase">
-                Sélectionne ta nationalité
-              </Text>
-              <TextInput
-                className="border bg-gray-300 px-3 py-2 rounded-full mb-4 text-black font-roboto"
-                placeholder="Rechercher un pays"
-                placeholderTextColor="#888"
-                onChangeText={(text) => {
-                  setCountrySearch(text);
-                  const filtered = frenchCountries.filter((country) =>
-                    country.toLowerCase().includes(text.toLowerCase())
-                  );
-                  setFilteredCountries(filtered);
-                }}
-                value={countrySearch}
+            {selectedImage ? (
+              <Image
+                source={{ uri: selectedImage.uri }}
+                resizeMode="cover"
+                style={{ width: "100%", height: "100%" }}
               />
-
-              <ScrollView>
-                {(countrySearch ? filteredCountries : frenchCountries).map(
-                  (country: any, index: number) => (
-                    <TouchableOpacity
-                      key={index}
-                      className="py-2 border-b border-white/20 flex-row items-center gap-x-2"
-                      onPress={() => {
-                        handleChange("nationalite", country);
-                        setCountrySearch("");
-                        setShowCountryModal(false);
-                      }}
-                    >
-                      <View className="h-4 w-4 rounded-full bg-white" />
-                      <Text className="text-white text-base font-inter">
-                        {country}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                )}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Ajoutes tes photos{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
-          </Text>
-          <View className="flex-row items-center justify-between my-2">
-            <TouchableOpacity
-              className="rounded-[16px] bg-[#888686] items-center justify-center w-[40vw] h-[40vw] overflow-hidden"
-              onPress={() => pickImage(0)}
-            >
-              {selectedImages.length === 0 ? (
+            ) : (
+              <View className="items-center justify-center">
                 <PlusIconBlack />
-              ) : (
-                <Image
-                  source={{ uri: selectedImages[0].uri }}
-                  resizeMode="cover"
-                  style={{ width: "100%", height: "100%" }}
-                />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="rounded-[16px] bg-[#888686] items-center justify-center w-[40vw] h-[40vw] overflow-hidden"
-              onPress={() => pickImage(1)}
-            >
-              {selectedImages.length < 2 ? (
-                <PlusIconBlack />
-              ) : (
-                <Image
-                  source={{ uri: selectedImages[1].uri }}
-                  resizeMode="cover"
-                  style={{ width: "100%", height: "100%" }}
-                />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View className="bg-[#2E2C2C] px-6 py-2">
-          <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-            Ajoutes tes videos{" "}
-            <Text className="text-red font-roboto-bold text-[20px]"> *</Text>
-          </Text>
-
-          <View className="flex-row items-center justify-between my-2">
-            {[0, 1].map((index) => (
-              <TouchableOpacity
-                key={index}
-                className="rounded-[16px] bg-[#888686] items-center justify-center w-[40vw] h-[40vw] overflow-hidden"
-                onPress={() => {
-                  if (selectedVideos[index]) {
-                    setSelectedVideo(index);
-                    handleVideoPress(selectedVideos[index].uri);
-                  } else {
-                    pickVideo(index);
-                  }
-                }}
-              >
-                {selectedVideos[index] ? (
-                  <>
-                    <Image
-                      source={{ uri: selectedVideos[index].thumbnail }}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                    <View className="absolute bg-black/50 rounded-full p-2">
-                      <Fontisto name="play" size={24} color="white" />
-                    </View>
-                  </>
-                ) : (
-                  <PlusIconBlack />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Video Player Modal */}
-          <Modal
-            visible={!!currentVideo}
-            transparent={true}
-            animationType="slide"
-          >
-            <View className="flex-1 justify-center">
-              <BlurView
-                tint="dark"
-                intensity={25}
-                style={{ ...StyleSheet.absoluteFillObject }}
-                reducedTransparencyFallbackColor="black"
-              />
-
-              {currentVideo && (
-                <Video
-                  style={{ width: "100%", height: "70%" }}
-                  source={{ uri: selectedVideos[selectedVideo].uri }}
-                />
-              )}
-              <TouchableOpacity
-                className="mx-10 py-2 rounded-full my-4 border border-red flex-row items-center gap-x-2 justify-center"
-                onPress={() => {
-                  closePlayer();
-                  pickVideo(selectedVideo);
-                }}
-              >
-                <Text className="text-white/70 text-center font-roboto-bold text-[20px]">
-                  Remplacer
-                </Text>
-                <MaterialIcons
-                  name="video-library"
-                  size={24}
-                  color="rgba(255,255,255,0.7)"
-                />
-              </TouchableOpacity>
-              <View className="absolute top-10 light-5 items-center justify-center mx-4">
-                <Text className="font-inter-bold text-[24px] text-red -tracking-[0.3px]">
-                  Video
+                <Text className="text-white mt-2 text-center">
+                  Appuyez pour ajouter une photo
                 </Text>
               </View>
-              <TouchableOpacity
-                className="absolute top-10 right-5 items-center justify-center h-10 w-10 bg-white/20 rounded-full"
-                onPress={closePlayer}
-              >
-                <Text className="text-white text-lg">✕</Text>
-              </TouchableOpacity>
-            </View>
-          </Modal>
+            )}
+          </TouchableOpacity>
         </View>
+
+        {/* Terms and Conditions */}
         <TouchableOpacity
-          className="flex-row gap-x-2 items-center justify-center"
+          className="flex-row gap-x-2 items-center justify-center mx-4"
           onPress={() => router.navigate("/Extras/CGU")}
         >
-          <Text className="text-center text-white/50 tracking-[-0.3px] font-roboto-condensed-semibold mt-2 ml-4">
+          <Text className="text-center text-white/50 tracking-[-0.3px] font-roboto-condensed-semibold mt-2">
             Conditions générales d&apos;utilisation
           </Text>
           <Octicons
             name="link-external"
             color={"rgba(255,255,255,0.5)"}
-            size={22}
+            size={20}
           />
         </TouchableOpacity>
-        <View className="items-center justify-center my-2 flex-row gap-x-2">
+        
+        <View className="items-center justify-center my-2 flex-row gap-x-2 mx-4">
           <Switch
             trackColor={{ true: "#d83335", false: "#ddd" }}
             thumbColor={"white"}
@@ -937,8 +481,9 @@ const Onboarding = () => {
           </Text>
         </View>
 
+        {/* Continue Button */}
         <TouchableOpacity
-          className="mt-2 self-center items-center justify-center rounded-[16] bg-[#D32C1C] py-2 px-8"
+          className="mt-4 self-center items-center justify-center rounded-[16] bg-[#D32C1C] py-3 px-8 mx-4"
           onPress={async () => {
             if (!accepted) {
               Toast.show({
@@ -947,25 +492,25 @@ const Onboarding = () => {
                 text2:
                   "Vous devez lire et accepter les Conditions Générales d'Utilisation!",
                 swipeable: true,
-                visibilityTime: 5000,
+                visibilityTime: 4000,
               });
               return;
             }
 
-            // Validate inputs
+            // Validate essential inputs only
             if (
               userData?.sex! <= 0 ||
-              userData?.nom === "" ||
-              userData?.prenoms === "" ||
-              userData?.naissance === "" ||
-              userData?.ville === "" ||
-              userData?.nationalite === "" ||
-              selectedImages.length === 0
+              !userData?.pseudo ||
+              !userData?.prenoms ||
+              !userData?.naissance ||
+              !userData?.ville ||
+              !selectedImage
             ) {
               Toast.show({
                 type: "info",
                 text1: "Champs requis",
-                text2: "Veuillez remplir tous les champs requis",
+                text2: "Veuillez remplir tous les champs obligatoires",
+                visibilityTime: 4000,
               });
               return;
             }
@@ -978,29 +523,19 @@ const Onboarding = () => {
             setBusy(true);
 
             try {
-              // Upload media files with their full structure
-              const [uploadedPhotos, uploadedVideos] = await Promise.all([
-                uploadMedia(
-                  getAuth().currentUser!.uid,
-                  selectedImages,
-                  "mesPhotos"
-                ),
-                uploadMedia(
-                  getAuth().currentUser!.uid,
-                  selectedVideos,
-                  "mesVideos"
-                ),
-              ]);
+              // Upload single photo
+              const photoUrl = await uploadPhoto(
+                getAuth().currentUser!.uid,
+                selectedImage
+              );
 
-              // Update user data with the complete media objects
-              handleChange("mesPhotos", uploadedPhotos);
-              handleChange("mesVideos", uploadedVideos);
-              handleChange("profilePicUrl", uploadedPhotos[0].uri);
+              // Update user data with essential info
+              handleChange("profilePicUrl", photoUrl);
+              handleChange("mesPhotos", [{ uri: photoUrl, id: selectedImage.id }]);
               handleChange("personalData", true);
               handleChange("acceptCGU", true);
 
-              console.log("uploaded photos >>> ", uploadedPhotos);
-              console.log("uploaded videos >>> ", uploadedVideos);
+              console.log("Uploaded photo URL: ", photoUrl);
 
               // Create/update user document
               if (userData) {
@@ -1010,49 +545,55 @@ const Onboarding = () => {
               setShowOverlay(false);
               setBusy(false);
               dispatch(setCreatingUserData(false));
+              
+              // Go directly to sport choice instead of all detailed screens
               router.navigate("/Users/SportChoice");
             } catch (error) {
               console.error("Upload error:", error);
               setShowOverlay(false);
               setBusy(false);
               
-              let errorMessage = "Échec du téléchargement des médias. Veuillez réessayer.";
+              let errorMessage = "Échec du téléchargement. Veuillez réessayer.";
               
-              // Provide specific error messages
               if (error instanceof Error) {
                 if (error.message.includes("trop volumineux")) {
                   errorMessage = error.message;
                 } else if (error.message.includes("network")) {
                   errorMessage = "Problème de connexion. Vérifiez votre internet.";
-                } else if (error.message.includes("permission")) {
-                  errorMessage = "Permissions insuffisantes. Contactez le support.";
                 }
               }
               
               Toast.show({
                 type: "error",
-                text1: "Erreur de téléchargement",
+                text1: "Erreur",
                 text2: errorMessage,
-                visibilityTime: 8000,
+                visibilityTime: 6000,
               });
             }
           }}
           disabled={busy}
         >
-          <Text className="text-white font-roboto-condensed tracking-[-0.3px] text-[20px]">
-            {busy ? "Traitement..." : "Je continue"}
+          <Text className="text-white font-roboto-condensed tracking-[-0.3px] text-[18px]">
+            {busy ? "Création en cours..." : "Continuer mon aventure FitMatch !"}
           </Text>
         </TouchableOpacity>
+        
+        <Text className="text-white/50 text-center tracking-[-0.3px] font-roboto-condensed text-[12px] mx-4 mb-4">
+          Ne vous inquiétez pas, vous pourrez compléter votre profil plus tard avec plus de photos, vidéos et préférences.
+        </Text>
       </KeyboardAwareScrollView>
+
+      {/* Loading Overlay */}
       <Modal visible={showOverlay} transparent>
-        <BlurView style={{ ...StyleSheet.absoluteFillObject }} />
-        <View className="flex-1 items-center justify-center gap-y-4">
+        <View className="flex-1 items-center justify-center gap-y-4 bg-black/80">
           <Text className="text-white text-[20px] font-inter-bold">
             Création de votre compte
           </Text>
           <ActivityIndicator color="white" />
         </View>
       </Modal>
+
+      {/* Sign Up Prompt Modal */}
       <Modal
         animationType="fade"
         visible={showPrompt}
@@ -1071,190 +612,180 @@ const Onboarding = () => {
             alignItems: "center",
           }}
         >
-          <BlurView
-            style={{ ...StyleSheet.absoluteFillObject }}
-            tint="dark"
-            intensity={4}
-            blurRadius={4}
-            reducedTransparencyFallbackColor="black"
-          />
-          <Pressable
-            style={{ ...StyleSheet.absoluteFillObject }}
-            onPress={() => {
-              if (!loading) setShowPrompt(false);
-            }}
-          />
-          <View />
-          <Animated.View
-            entering={ZoomInDown.duration(600)}
-            className="bg-[#0f0e0c] p-4 h-[75vh] w-[95vw] rounded-t-[30px]"
-          >
-            <KeyboardAwareScrollView>
-              <View className="h-1 bg-white/30 self-center w-14 rounded-full my-2" />
-              <Text className="text-white font-roboto-bold text-[20px] text-center">
-                Finalisation
-              </Text>
-              <View className="gap-y-2 px-6 py-2">
-                <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-                  Email
+          <View className="flex-1 bg-black/50 justify-center items-center px-4">
+            <Pressable
+              style={{ ...StyleSheet.absoluteFillObject }}
+              onPress={() => {
+                if (!loading) setShowPrompt(false);
+              }}
+            />
+            <View />
+            <Animated.View
+              entering={ZoomInDown.duration(600)}
+              className="bg-[#0f0e0c] p-4 h-[60vh] w-[95vw] rounded-t-[30px]"
+            >
+              <KeyboardAwareScrollView>
+                <View className="h-1 bg-white/30 self-center w-14 rounded-full my-2" />
+                <Text className="text-white font-roboto-bold text-[20px] text-center mb-4">
+                  Finalisation de votre compte
                 </Text>
-                <TextInput
-                  className="bg-white rounded-lg"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  value={signUpForm.email}
-                  onChangeText={(text) =>
-                    setSignUpForm({ ...signUpForm, email: text })
-                  }
-                />
-              </View>
-              <View className="gap-y-2 px-6 py-2">
-                <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-                  Mot de passe
-                </Text>
-                <View className="flex-row items-center bg-white rounded-lg px-2">
-                  <TextInput
-                    className="flex-1 text-black font-roboto py-2"
-                    value={signUpForm.password}
-                    onChangeText={(text) =>
-                      setSignUpForm({ ...signUpForm, password: text })
-                    }
-                    autoCapitalize="none"
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off" : "eye"}
-                      size={20}
-                      color="gray"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View className="gap-y-2 px-6 py-2">
-                <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
-                  Confirmer mot de passe
-                </Text>
-                <View className="flex-row items-center bg-white rounded-lg px-2">
-                  <TextInput
-                    className="flex-1 text-black font-roboto py-2"
-                    value={signUpForm.confirmPassword}
-                    onChangeText={(text) =>
-                      setSignUpForm({ ...signUpForm, confirmPassword: text })
-                    }
-                    autoCapitalize="none"
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    <Ionicons
-                      name={showConfirmPassword ? "eye-off" : "eye"}
-                      size={20}
-                      color="gray"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <TouchableOpacity
-                className="mt-8 mx-4 items-center justify-center rounded-[16] bg-[#D32C1C] py-2 px-8"
-                onPress={async () => {
-                  if (loading || creatingUserData) return;
-
-                  // Validate form
-                  if (
-                    signUpForm.email === "" ||
-                    signUpForm.password === "" ||
-                    signUpForm.confirmPassword === "" ||
-                    signUpForm.password !== signUpForm.confirmPassword
-                  ) {
-                    Toast.show({
-                      text1: "Inscription",
-                      text2:
-                        "Veuillez verifier vos informations: email et mot de passe!",
-                      type: "error",
-                    });
-                    return;
-                  }
-
-                  try {
-                    dispatch(setCreatingUserData(true));
-
-                    // Step 1: Sign up the user
-                    await signUp(signUpForm.email, signUpForm.password);
-
-                    if (error) {
-                      throw new Error(error);
-                    }
-
-                    // Step 2: Prepare user data
-                    handleChange("email", signUpForm.email);
-                    handleChange("personalData", true);
-                    handleChange("acceptCGU", true);
-                    
-                    const currentUser = getAuth().currentUser;
-                    if (!currentUser) {
-                      throw new Error("Utilisateur non authentifié");
-                    }
-                    const userId = currentUser.uid;
-                    console.log("User ID >> ", userId);
-
-                    // Step 3: Upload media files
-                    const [uploadedPhotos, uploadedVideos] = await Promise.all([
-                      uploadMedia(userId, selectedImages, "mesPhotos"),
-                      uploadMedia(userId, selectedVideos, "mesVideos"),
-                    ]);
-
-                    console.log("uploaded photos >>> ", uploadedPhotos);
-                    console.log("uploaded videos >>> ", uploadedVideos);
-
-                    // Update user data with media URLs
-                    handleChange("mesPhotos", uploadedPhotos);
-                    handleChange("mesVideos", uploadedVideos);
-                    handleChange("profilePicUrl", uploadedPhotos[0].uri);
-
-                    // Step 4: Create user document
-                    if (userData) {
-                      await createUserIfNotExists("binome", userData);
-                    }
-
-                    // Step 5: Sign in the user
-                    await signIn(signUpForm.email, signUpForm.password);
-
-                    // Success - auth listener will handle redirect
-                    setShowPrompt(false);
-                  } catch (err) {
-                    console.error("Registration error:", err);
-                    Toast.show({
-                      text1: "Erreur",
-                      text2: (err as Error).message || "Une erreur est survenue",
-                      type: "error",
-                    });
-                  } finally {
-                    dispatch(setCreatingUserData(false));
-                  }
-                }}
-                disabled={loading || creatingUserData}
-              >
-                {loading || creatingUserData ? (
-                  <ActivityIndicator color={"white"} />
-                ) : (
-                  <Text className="text-white font-roboto-condensed tracking-[-0.3px] text-[20px]">
-                    Créer mon compte!
+                <View className="gap-y-2 px-6 py-2">
+                  <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
+                    Email
                   </Text>
-                )}
-              </TouchableOpacity>
+                  <TextInput
+                    className="bg-white rounded-lg p-3"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    placeholder="votre@email.com"
+                    value={signUpForm.email}
+                    onChangeText={(text) =>
+                      setSignUpForm({ ...signUpForm, email: text })
+                    }
+                  />
+                </View>
+                <View className="gap-y-2 px-6 py-2">
+                  <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
+                    Mot de passe
+                  </Text>
+                  <View className="flex-row items-center bg-white rounded-lg px-2">
+                    <TextInput
+                      className="flex-1 text-black font-roboto py-3"
+                      placeholder="Mot de passe"
+                      value={signUpForm.password}
+                      onChangeText={(text) =>
+                        setSignUpForm({ ...signUpForm, password: text })
+                      }
+                      autoCapitalize="none"
+                      secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Ionicons
+                        name={showPassword ? "eye-off" : "eye"}
+                        size={20}
+                        color="gray"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
-              <Image
-                source={require("@/assets/images/logo.png")}
-                className="w-[86] h-[53] mx-4 mt-8 self-center my-4"
-                resizeMode="cover"
-              />
-            </KeyboardAwareScrollView>
-          </Animated.View>
+                <View className="gap-y-2 px-6 py-2">
+                  <Text className="text-white tracking-[-0.3px] font-roboto-condensed text-[14px]">
+                    Confirmer mot de passe
+                  </Text>
+                  <View className="flex-row items-center bg-white rounded-lg px-2">
+                    <TextInput
+                      className="flex-1 text-black font-roboto py-3"
+                      placeholder="Confirmer"
+                      value={signUpForm.confirmPassword}
+                      onChangeText={(text) =>
+                        setSignUpForm({ ...signUpForm, confirmPassword: text })
+                      }
+                      autoCapitalize="none"
+                      secureTextEntry={!showConfirmPassword}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <Ionicons
+                        name={showConfirmPassword ? "eye-off" : "eye"}
+                        size={20}
+                        color="gray"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  className="mt-8 mx-4 items-center justify-center rounded-[16] bg-[#D32C1C] py-3 px-8"
+                  onPress={async () => {
+                    if (loading || creatingUserData) return;
+
+                    // Validate form
+                    if (
+                      signUpForm.email === "" ||
+                      signUpForm.password === "" ||
+                      signUpForm.confirmPassword === "" ||
+                      signUpForm.password !== signUpForm.confirmPassword
+                    ) {
+                      Toast.show({
+                        text1: "Inscription",
+                        text2:
+                          "Veuillez vérifier vos informations: email et mot de passe!",
+                        type: "error",
+                      });
+                      return;
+                    }
+
+                    try {
+                      dispatch(setCreatingUserData(true));
+
+                      // Step 1: Sign up the user
+                      await signUp(signUpForm.email, signUpForm.password);
+
+                      if (error) {
+                        throw new Error(error);
+                      }
+
+                      // Step 2: Prepare user data
+                      handleChange("email", signUpForm.email);
+                      handleChange("personalData", true);
+                      handleChange("acceptCGU", true);
+                      
+                      const currentUser = getAuth().currentUser;
+                      if (!currentUser) {
+                        throw new Error("Utilisateur non authentifié");
+                      }
+                      const userId = currentUser.uid;
+
+                      // Step 3: Upload photo
+                      const photoUrl = await uploadPhoto(userId, selectedImage!);
+
+                      // Update user data with media URLs
+                      handleChange("mesPhotos", [{ uri: photoUrl, id: selectedImage!.id }]);
+                      handleChange("profilePicUrl", photoUrl);
+
+                      // Step 4: Create user document
+                      if (userData) {
+                        await createUserIfNotExists("binome", userData);
+                      }
+
+                      // Step 5: Sign in the user
+                      await signIn(signUpForm.email, signUpForm.password);
+
+                      // Success - auth listener will handle redirect
+                      setShowPrompt(false);
+                    } catch (err) {
+                      console.error("Registration error:", err);
+                      Toast.show({
+                        text1: "Erreur",
+                        text2: (err as Error).message || "Une erreur est survenue",
+                        type: "error",
+                      });
+                    } finally {
+                      dispatch(setCreatingUserData(false));
+                    }
+                  }}
+                  disabled={loading || creatingUserData}
+                >
+                  {loading || creatingUserData ? (
+                    <ActivityIndicator color={"white"} />
+                  ) : (
+                    <Text className="text-white font-roboto-condensed tracking-[-0.3px] text-[18px]">
+                      Créer mon compte FitMatch !
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                <Image
+                  source={require("@/assets/images/logo.png")}
+                  className="w-[86] h-[53] mx-4 mt-8 self-center my-4"
+                  resizeMode="cover"
+                />
+              </KeyboardAwareScrollView>
+            </Animated.View>
+          </View>
         </ScrollView>
         <Toast />
       </Modal>
