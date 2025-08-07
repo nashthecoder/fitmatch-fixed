@@ -545,12 +545,12 @@ const Onboarding = () => {
             size={22}
           />
         </TouchableOpacity>
-        <View className="items-center justify-center my-2 flex-row ">
+        <View className="items-center justify-center my-2 flex-row gap-x-2">
           <Switch
             trackColor={{ true: "#d83335", false: "#ddd" }}
             thumbColor={"white"}
             value={accepted}
-            onChange={() => setAccepted(!accepted)}
+            onValueChange={(value) => setAccepted(value)}
           />
           <Text className="text-white text-center tracking-[-0.3px] font-roboto-condensed text-[14px]">
             J&apos;accepte les CGU
