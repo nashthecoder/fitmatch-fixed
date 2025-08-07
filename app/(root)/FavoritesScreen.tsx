@@ -158,7 +158,7 @@ const FavoritesScreen = () => {
             {selectedFilter === "Mes coups de cœur"
               ? "coup de cœur"
               : "cœur reçu"}{" "}
-            pour l'instant
+            pour l&apos;instant
           </Text>
         </View>
       ) : (
