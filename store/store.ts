@@ -1,20 +1,27 @@
 import { configureStore } from '@reduxjs/toolkit';
+import { persistStore, persistReducer } from 'redux-persist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { rootReducer } from './rootReducer';
 
-// Minimal store configuration
-const store = configureStore({
-  reducer: {
-    auth: (state = { user: null, creatingUserData: false }, action) => {
-      switch (action.type) {
-        case 'SET_USER':
-          return { ...state, user: action.payload };
-        case 'SET_CREATING':
-          return { ...state, creatingUserData: action.payload };
-        default:
-          return state;
-      }
-    }
-  }
+const persistConfig = {
+  key: 'root',
+  storage: AsyncStorage,
+  whitelist: ['auth', 'user'], // only these will be persisted
+};
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+      },
+    }),
 });
 
-export const persistor = { purge: () => Promise.resolve() };
-export { store };
+export const persistor = persistStore(store);
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

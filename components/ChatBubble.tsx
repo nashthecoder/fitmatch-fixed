@@ -1,7 +1,21 @@
 import moment from "moment";
+import React from "react";
 import { Text, View } from "react-native";
 
-export default function ChatBubble({ message, currentUserId }) {
+interface Message {
+  senderId: string;
+  text: string;
+  createdAt: {
+    toDate: () => Date;
+  };
+}
+
+interface ChatBubbleProps {
+  message: Message;
+  currentUserId: string;
+}
+
+const ChatBubble = React.memo(({ message, currentUserId }: ChatBubbleProps) => {
   const isMine = message.senderId === currentUserId;
   return (
     <View className={`mb-2 ${isMine ? "items-end" : "items-start"}`}>
@@ -19,4 +33,8 @@ export default function ChatBubble({ message, currentUserId }) {
       </View>
     </View>
   );
-}
+});
+
+ChatBubble.displayName = 'ChatBubble';
+
+export default ChatBubble;
