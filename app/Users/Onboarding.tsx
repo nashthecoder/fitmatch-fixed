@@ -47,6 +47,7 @@ import {
   getDownloadURL,
   getStorage,
   ref,
+  uploadBytes,
   uploadBytesResumable,
 } from "firebase/storage";
 import Video from "react-native-video";
@@ -185,8 +186,17 @@ const Onboarding = () => {
     const uploadPromises = mediaItems.map(async (mediaItem) => {
       try {
         // Check file size before upload (limit to 10MB for images, 50MB for videos)
-        const response = await fetch(mediaItem.uri);
-        const blob = await response.blob();
+        let blob: Blob;
+        
+        if (Platform.OS === 'web') {
+          // For web, handle the file differently to avoid CORS issues
+          const response = await fetch(mediaItem.uri);
+          blob = await response.blob();
+        } else {
+          // For mobile platforms
+          const response = await fetch(mediaItem.uri);
+          blob = await response.blob();
+        }
         
         const maxSize = folder === "mesPhotos" ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for photos, 50MB for videos
         if (blob.size > maxSize) {
@@ -196,7 +206,7 @@ const Onboarding = () => {
         // Upload main media file
         const mediaFilename = `${folder}_${Date.now()}_${
           mediaItem.id
-        }.${mediaItem.uri.split(".").pop()}`;
+        }.${getFileExtension(mediaItem.uri)}`;
         const mediaRef = ref(
           storage,
           `users/${userId}/${folder}/${mediaFilename}`
@@ -204,26 +214,9 @@ const Onboarding = () => {
 
         console.log(`Uploading ${folder} file: ${mediaFilename}, size: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
 
-        const mediaUpload = uploadBytesResumable(mediaRef, blob);
-        
-        // Add upload progress monitoring
-        await new Promise((resolve, reject) => {
-          mediaUpload.on('state_changed', 
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              console.log(`Upload progress: ${progress.toFixed(1)}%`);
-            },
-            (error) => {
-              console.error('Upload error:', error);
-              reject(error);
-            },
-            () => {
-              resolve(mediaUpload.snapshot);
-            }
-          );
-        });
-
-        const mediaUrl = await getDownloadURL(mediaUpload.snapshot.ref);
+        // Use uploadBytes for better compatibility across platforms
+        await uploadBytes(mediaRef, blob);
+        const mediaUrl = await getDownloadURL(mediaRef);
 
         // Upload thumbnail if it exists
         let thumbnailUrl = null;
@@ -241,9 +234,8 @@ const Onboarding = () => {
           if (thumbBlob.size > 2 * 1024 * 1024) {
             console.warn('Thumbnail too large, skipping');
           } else {
-            const thumbUpload = uploadBytesResumable(thumbRef, thumbBlob);
-            await thumbUpload;
-            thumbnailUrl = await getDownloadURL(thumbUpload.snapshot.ref);
+            await uploadBytes(thumbRef, thumbBlob);
+            thumbnailUrl = await getDownloadURL(thumbRef);
           }
         }
 
@@ -259,6 +251,12 @@ const Onboarding = () => {
     });
 
     return Promise.all(uploadPromises);
+  };
+
+  // Helper function to get file extension
+  const getFileExtension = (uri: string): string => {
+    const parts = uri.split('.');
+    return parts[parts.length - 1] || 'jpg';
   };
 
   const handleVideoPress = (videoUri: string) => {
