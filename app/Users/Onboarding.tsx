@@ -185,16 +185,22 @@ const Onboarding = () => {
   ): Promise<PhotoVideoMediaType[]> => {
     const uploadPromises = mediaItems.map(async (mediaItem) => {
       try {
-        // Check file size before upload (limit to 10MB for images, 50MB for videos)
+        // Get blob from URI without encoding issues
         let blob: Blob;
         
         if (Platform.OS === 'web') {
-          // For web, handle the file differently to avoid CORS issues
+          // For web, create blob directly from fetch to avoid data URL issues
           const response = await fetch(mediaItem.uri);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch media: ${response.statusText}`);
+          }
           blob = await response.blob();
         } else {
           // For mobile platforms
           const response = await fetch(mediaItem.uri);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch media: ${response.statusText}`);
+          }
           blob = await response.blob();
         }
         
@@ -203,10 +209,11 @@ const Onboarding = () => {
           throw new Error(`Fichier trop volumineux. Taille maximale: ${folder === "mesPhotos" ? "10MB" : "50MB"}`);
         }
 
-        // Upload main media file
-        const mediaFilename = `${folder}_${Date.now()}_${
-          mediaItem.id
-        }.${getFileExtension(mediaItem.uri)}`;
+        // Create a clean filename without special characters
+        const timestamp = Date.now();
+        const fileExtension = getFileExtension(mediaItem.uri);
+        const mediaFilename = `${folder}_${timestamp}_${mediaItem.id}.${fileExtension}`;
+        
         const mediaRef = ref(
           storage,
           `users/${userId}/${folder}/${mediaFilename}`
@@ -214,28 +221,39 @@ const Onboarding = () => {
 
         console.log(`Uploading ${folder} file: ${mediaFilename}, size: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
 
-        // Use uploadBytes for better compatibility across platforms
-        await uploadBytes(mediaRef, blob);
-        const mediaUrl = await getDownloadURL(mediaRef);
+        // Upload main media file using uploadBytes (better CORS compatibility)
+        const uploadResult = await uploadBytes(mediaRef, blob, {
+          contentType: blob.type || (folder === "mesPhotos" ? "image/jpeg" : "video/mp4")
+        });
+        
+        const mediaUrl = await getDownloadURL(uploadResult.ref);
 
         // Upload thumbnail if it exists
         let thumbnailUrl = null;
         if (mediaItem.thumbnail) {
-          const thumbFilename = `thumb_${mediaFilename}`;
-          const thumbRef = ref(
-            storage,
-            `users/${userId}/${folder}/thumbs/${thumbFilename}`
-          );
+          try {
+            const thumbFilename = `thumb_${mediaFilename}`;
+            const thumbRef = ref(
+              storage,
+              `users/${userId}/${folder}/thumbs/${thumbFilename}`
+            );
 
-          const thumbResponse = await fetch(mediaItem.thumbnail);
-          const thumbBlob = await thumbResponse.blob();
-          
-          // Limit thumbnail size to 2MB
-          if (thumbBlob.size > 2 * 1024 * 1024) {
-            console.warn('Thumbnail too large, skipping');
-          } else {
-            await uploadBytes(thumbRef, thumbBlob);
-            thumbnailUrl = await getDownloadURL(thumbRef);
+            const thumbResponse = await fetch(mediaItem.thumbnail);
+            if (thumbResponse.ok) {
+              const thumbBlob = await thumbResponse.blob();
+              
+              // Limit thumbnail size to 2MB
+              if (thumbBlob.size <= 2 * 1024 * 1024) {
+                const thumbUploadResult = await uploadBytes(thumbRef, thumbBlob, {
+                  contentType: "image/jpeg"
+                });
+                thumbnailUrl = await getDownloadURL(thumbUploadResult.ref);
+              } else {
+                console.warn('Thumbnail too large, skipping');
+              }
+            }
+          } catch (thumbError) {
+            console.warn('Thumbnail upload failed, continuing without:', thumbError);
           }
         }
 
@@ -255,8 +273,21 @@ const Onboarding = () => {
 
   // Helper function to get file extension
   const getFileExtension = (uri: string): string => {
+    // Handle blob URIs and data URIs
+    if (uri.startsWith('blob:') || uri.startsWith('data:')) {
+      // For blob/data URIs, default to appropriate extension
+      return 'jpg';
+    }
+    
+    // Extract extension from regular file URIs
     const parts = uri.split('.');
-    return parts[parts.length - 1] || 'jpg';
+    const extension = parts[parts.length - 1];
+    
+    // Common image/video extensions
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'];
+    const normalizedExt = extension.toLowerCase();
+    
+    return validExtensions.includes(normalizedExt) ? normalizedExt : 'jpg';
   };
 
   const handleVideoPress = (videoUri: string) => {
