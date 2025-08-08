@@ -341,6 +341,19 @@ Ce projet est sous licence propriétaire. Tous droits réservés.
 - **Développeur**: @julianojosoa13
 - **Repository**: [nashthecoder/fitmatch-fixed](https://github.com/nashthecoder/fitmatch-fixed)
 
+## 📚 Project Documentation
+
+**Comprehensive Wiki Available**: For detailed documentation about the project, including changes made, current status, and development guides, visit our **[Project Wiki](wiki/README.md)**.
+
+### Quick Wiki Navigation:
+- **[Project Overview](wiki/Project-Overview.md)** - Complete app description and features
+- **[Current Status](wiki/Current-Status.md)** - Current state and health metrics
+- **[Changes Made](wiki/Changelog.md)** - Detailed record of all improvements
+- **[Prior State](wiki/Prior-State.md)** - App status before improvements
+- **[Pending Fixes](wiki/Pending-Fixes.md)** - Roadmap to 100% completion
+- **[Development Guide](wiki/Development-Guide.md)** - Setup and development workflow
+- **[Technical Architecture](wiki/Technical-Architecture.md)** - System design and architecture
+
 ---
 
 **FitMatch** - Transformez votre passion pour le fitness en connexions authentiques ! 🏋️‍♀️💪
