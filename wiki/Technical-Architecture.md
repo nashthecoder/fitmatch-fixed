@@ -291,6 +291,248 @@ storage/
     └── stories/           # Story media files
 ```
 
+#### Detailed Data Schema
+
+**Extended Users Collection Schema:**
+```typescript
+interface UserDocument {
+  // Core Identity
+  uid: string;
+  email: string;
+  nom: string;
+  prenoms: string;
+  pseudo?: string;
+  
+  // Profile
+  profilePicUrl?: string;
+  coverPhotoUrl?: string;
+  bio?: string;
+  dateNaissance: string;
+  nationalite: string;
+  
+  // Fitness Profile
+  fitnessGoals: string[];
+  workoutTypes: string[];
+  experienceLevel: "beginner" | "intermediate" | "advanced";
+  preferredSchedule: {
+    days: string[];
+    timeSlots: string[];
+  };
+  
+  // Location
+  location: {
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  
+  // Media
+  images: string[];
+  videos: string[];
+  
+  // App State
+  isValid: boolean;
+  acceptCGU: boolean;
+  isVerified: boolean;
+  
+  // Timestamps
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastSeen: Timestamp;
+}
+```
+
+**Posts Collection Schema:**
+```typescript
+interface PostDocument {
+  id: string;
+  
+  // Content
+  text: string;
+  mediaUrl?: string;
+  mediaType?: "photo" | "video";
+  thumbnailUrl?: string; // For videos
+  
+  // Author Info (denormalized for performance)
+  posterInfo: {
+    uid: string;
+    username: string;
+    profilePicUrl?: string;
+    verified?: boolean;
+  };
+  
+  // Engagement Metrics
+  likes: {
+    count: number;
+    by: string[]; // User IDs who liked
+  };
+  comments: {
+    count: number;
+  };
+  shares: {
+    count: number;
+    by: string[];
+  };
+  
+  // Tagging
+  taggedUsers: string[];
+  taggedEventId?: string;
+  taggedPlaceName?: string;
+  
+  // Timestamps
+  createdAt: Timestamp;
+}
+```
+
+**Events Collection Schema:**
+```typescript
+interface EventDocument {
+  id: string;
+  title: string;
+  description: string;
+  
+  // Event Details
+  eventType: "workout" | "class" | "competition" | "social";
+  category: string; // "cardio", "strength", "yoga", etc.
+  
+  // Scheduling
+  startDate: Timestamp;
+  endDate: Timestamp;
+  duration: number; // minutes
+  
+  // Location
+  location: {
+    address: string;
+    latitude: number;
+    longitude: number;
+    venue?: string;
+  };
+  
+  // Organizer Info
+  organizerInfo: {
+    uid: string;
+    name: string;
+    profilePicUrl?: string;
+    type: "user" | "partner";
+  };
+  
+  // Participants
+  participants: {
+    current: string[]; // User IDs
+    max?: number;
+    waitlist: string[];
+  };
+  
+  // Media
+  images: string[];
+  
+  // Status
+  status: "upcoming" | "ongoing" | "completed" | "cancelled";
+  isPublic: boolean;
+  
+  // Timestamps
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+**Stories Collection Schema:**
+```typescript
+interface StoryDocument {
+  id: string;
+  
+  // Content
+  mediaUrl: string;
+  mediaType: "photo" | "video";
+  
+  // Author Info
+  posterInfo: {
+    uid: string;
+    nom: string;
+    prenoms: string;
+    profilePicUrl: string;
+  };
+  
+  // Expiration
+  expiredOn: Timestamp; // Auto-delete after 24h
+  
+  // Timestamps
+  createdAt: Timestamp;
+}
+```
+
+**Enhanced Chat Schema:**
+```typescript
+interface ChatDocument {
+  id: string;
+  participants: {
+    [userId: string]: {
+      name: string;
+      profilePicUrl?: string;
+      joinedAt: Timestamp;
+      lastSeen: Timestamp;
+    };
+  };
+  
+  // Chat Metadata
+  type: "direct" | "group";
+  title?: string; // For group chats
+  
+  // Last Message (denormalized for performance)
+  lastMessage: {
+    id: string;
+    text: string;
+    senderId: string;
+    senderName: string;
+    type: "text" | "image" | "video" | "location";
+    createdAt: Timestamp;
+    edited?: boolean;
+  };
+  
+  // Chat State
+  isActive: boolean;
+  unreadCount: {
+    [userId: string]: number;
+  };
+  
+  // Timestamps
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Messages subcollection: chats/{chatId}/messages/{messageId}
+interface MessageDocument {
+  id: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  
+  // Message Type
+  type: "text" | "image" | "video" | "location" | "system";
+  
+  // Media (if applicable)
+  mediaUrl?: string;
+  thumbnailUrl?: string;
+  
+  // Location (if applicable)
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+  
+  // Message State
+  edited?: boolean;
+  editedAt?: Timestamp;
+  readBy: {
+    [userId: string]: Timestamp;
+  };
+  
+  // Timestamps
+  createdAt: Timestamp;
+}
+```
+
 ### Security Rules
 
 **Firestore Security Rules:**
