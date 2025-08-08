@@ -70,7 +70,6 @@ const EventCreationModal = ({
           style={{ ...StyleSheet.absoluteFillObject }}
           intensity={25}
           tint="dark"
-          reducedTransparencyFallbackColor="black"
         />
         <View className="flex-row justify-between items-center pr-10 pl-4 w-full absolute top-8">
           <Image
@@ -81,7 +80,7 @@ const EventCreationModal = ({
           {created && (
             <TouchableOpacity
               hitSlop={8}
-              onPress={() => router.dismissTo("/Partner/ProfilPartenaire")}
+              onPress={() => router.dismiss()}
             >
               <CloseIcon />
             </TouchableOpacity>

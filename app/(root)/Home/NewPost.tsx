@@ -169,9 +169,9 @@ const NewPost = () => {
         ...postData,
         posterInfo: {
           uid: userId,
-          username: userData.nom + " " + userData.prenoms,
+          username: (userData?.nom || "") + " " + (userData?.prenoms || ""),
           profilePicUrl: userData?.profilePicUrl ?? "",
-          verified: userData?.verified ?? false,
+          verified: false, // Remove verified property as it doesn't exist in UserData type
         },
         createdAt: serverTimestamp(),
         mediaUrl,
@@ -270,7 +270,7 @@ const NewPost = () => {
               </View>
               <View>
                 <Text className="font-roboto-condensed -tracking-|0.3px] text-white text-[24px] text-wrap max-w-[50vw] my-1 mx-2">
-                  {userData.nom} {userData.prenoms}
+                  {userData?.nom || ""} {userData?.prenoms || ""}
                 </Text>
                 <View className="flex-row flex-wrap gap-x-4 gap-y-1  max-w-[60vw]">
                   <TouchableOpacity
@@ -403,7 +403,6 @@ const NewPost = () => {
         <BlurView
           tint="dark"
           intensity={15}
-          reducedTransparencyFallbackColor="black"
           style={{ ...StyleSheet.absoluteFillObject }}
         />
         <View className="flex-1 items-center justify-center gap-4">
