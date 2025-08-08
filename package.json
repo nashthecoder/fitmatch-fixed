@@ -13,7 +13,12 @@
     "type-check": "tsc --noEmit",
     "build": "expo export",
     "dev": "expo start --dev-client",
-    "clean": "expo install --fix"
+    "clean": "expo install --fix",
+    "build:preview": "eas build --platform android --profile preview",
+    "build:production": "eas build --platform android --profile production",
+    "build:ios": "eas build --platform ios --profile production",
+    "deploy:firebase": "firebase deploy --only firestore:rules,storage",
+    "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.61",
