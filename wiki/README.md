@@ -8,91 +8,98 @@ The FitMatch wiki provides comprehensive documentation for the social fitness ap
 
 ## 🏠 Main Wiki Pages
 
-### Overview & Status
+### **Project Management**
 - **[Home](Home.md)** - Main wiki page with navigation and project summary
-- **[Project Overview](Project-Overview.md)** - Complete app description, features, and vision
-- **[Current Status](Current-Status.md)** - Current state of the application and health metrics
+- **[Project Workplan](Project-Workplan.md)** - Complete project timeline and deliverables
+- **[Project Overview](Project-Overview.md)** - App description, features, and business vision
+- **[Current Status](Current-Status.md)** - Real-time project health and completion metrics
 
-### Change Documentation  
-- **[Prior State](Prior-State.md)** - App status before recent improvements
+### **Production & Deployment**  
+- **[Production Deployment](Production-Deployment.md)** - Complete mobile deployment guide (Android/iOS/Web)
+- **[Prior State](Prior-State.md)** - Historical analysis of app state before improvements
+- **[Pending Fixes](Pending-Fixes.md)** - Remaining work items and technical debt
+
+### **Technical Documentation**
+- **[Technical Architecture](Technical-Architecture.md)** - System design, technology stack, and architecture
+- **[Development Guide](Development-Guide.md)** - Developer setup, workflow, and troubleshooting  
 - **[Changelog](Changelog.md)** - Detailed chronological record of all changes made
 - **[Improvements Summary](Improvements-Summary.md)** - High-level overview of major improvements
 
-### Technical Documentation
-- **[Technical Architecture](Technical-Architecture.md)** - System design, technology stack, and architecture
-- **[Development Guide](Development-Guide.md)** - Complete developer setup and workflow guide
-- **[Pending Fixes](Pending-Fixes.md)** - Remaining items to reach 100% completion
-
 ## 🎯 Quick Navigation by Role
 
-### For New Developers
-1. Start with [Project Overview](Project-Overview.md) to understand the application
-2. Read [Development Guide](Development-Guide.md) for setup instructions
-3. Review [Technical Architecture](Technical-Architecture.md) for system understanding
-4. Check [Current Status](Current-Status.md) for current project health
+### **For Project Managers & Stakeholders**
+1. **[Project Workplan](Project-Workplan.md)** - Complete timeline, deliverables, and resource allocation
+2. **[Current Status](Current-Status.md)** - Real-time project health and completion metrics
+3. **[Production Deployment](Production-Deployment.md)** - Mobile deployment strategy and timeline  
+4. **[Improvements Summary](Improvements-Summary.md)** - Business value and achievements delivered
 
-### For Project Managers
-1. Review [Current Status](Current-Status.md) for project health metrics
-2. Check [Improvements Summary](Improvements-Summary.md) for recent achievements
-3. Examine [Pending Fixes](Pending-Fixes.md) for future planning
-4. Reference [Changelog](Changelog.md) for detailed progress tracking
+### **For Developers & Technical Team**
+1. **[Development Guide](Development-Guide.md)** - Complete setup instructions and workflow
+2. **[Technical Architecture](Technical-Architecture.md)** - System design and technology decisions
+3. **[Production Deployment](Production-Deployment.md)** - Build pipelines and deployment procedures
+4. **[Pending Fixes](Pending-Fixes.md)** - Current technical roadmap and remaining work
 
-### For Technical Leads
-1. Study [Technical Architecture](Technical-Architecture.md) for system design
-2. Review [Prior State](Prior-State.md) to understand the journey
-3. Analyze [Changelog](Changelog.md) for implementation details
-4. Plan using [Pending Fixes](Pending-Fixes.md) roadmap
+### **For New Team Members**
+1. **[Project Overview](Project-Overview.md)** - Business context and app functionality  
+2. **[Development Guide](Development-Guide.md)** - Environment setup and getting started
+3. **[Current Status](Current-Status.md)** - Where the project stands today
+4. **[Project Workplan](Project-Workplan.md)** - Timeline and upcoming milestones
 
-### For Stakeholders
-1. Read [Project Overview](Project-Overview.md) for business understanding
-2. Check [Current Status](Current-Status.md) for project readiness
-3. Review [Improvements Summary](Improvements-Summary.md) for value delivered
+### **For QA & Testing**
+1. **[Production Deployment](Production-Deployment.md)** - Testing procedures and deployment checklists
+2. **[Current Status](Current-Status.md)** - Known issues and testing priorities
+3. **[Technical Architecture](Technical-Architecture.md)** - System components to test
+4. **[Pending Fixes](Pending-Fixes.md)** - Areas requiring focused testing
 
 ## 📊 Key Documentation Statistics
 
-| Document | Content Type | Last Updated | Status |
-|----------|-------------|--------------|--------|
-| [Home](Home.md) | Navigation & Overview | 2024-01-08 | ✅ Complete |
-| [Project Overview](Project-Overview.md) | Business & Features | 2024-01-08 | ✅ Complete |
-| [Prior State](Prior-State.md) | Historical Analysis | 2024-01-08 | ✅ Complete |
-| [Changelog](Changelog.md) | Technical Changes | 2024-01-08 | ✅ Complete |
-| [Current Status](Current-Status.md) | Project Health | 2024-01-08 | ✅ Complete |
-| [Technical Architecture](Technical-Architecture.md) | System Design | 2024-01-08 | ✅ Complete |
-| [Pending Fixes](Pending-Fixes.md) | Future Planning | 2024-01-08 | ✅ Complete |
-| [Development Guide](Development-Guide.md) | Developer Workflow | 2024-01-08 | ✅ Complete |
-| [Improvements Summary](Improvements-Summary.md) | Executive Summary | 2024-01-08 | ✅ Complete |
+| Document | Content Type | Primary Audience | Status |
+|----------|-------------|------------------|--------|
+| **[Home](Home.md)** | Navigation & Overview | All users | ✅ Complete |
+| **[Project Workplan](Project-Workplan.md)** | Timeline & Deliverables | PM, Stakeholders | ✅ Complete |
+| **[Production Deployment](Production-Deployment.md)** | Deployment Guide | DevOps, Technical | ✅ Complete |
+| **[Project Overview](Project-Overview.md)** | Business & Features | Stakeholders, New team | ✅ Complete |
+| **[Development Guide](Development-Guide.md)** | Developer Workflow | Developers, QA | ✅ Complete |
+| **[Technical Architecture](Technical-Architecture.md)** | System Design | Technical leads, Developers | ✅ Complete |
+| **[Current Status](Current-Status.md)** | Project Health | PM, Stakeholders | ✅ Complete |
+| **[Prior State](Prior-State.md)** | Historical Analysis | Technical leads | ✅ Complete |
+| **[Changelog](Changelog.md)** | Technical Changes | Developers, Technical | ✅ Complete |
+| **[Pending Fixes](Pending-Fixes.md)** | Future Planning | PM, Developers | ✅ Complete |
+| **[Improvements Summary](Improvements-Summary.md)** | Executive Summary | Stakeholders, PM | ✅ Complete |
 
 ## 🔍 Documentation Search Guide
 
 ### Find Information About:
 
-**Project Features & Business**
-- App features and capabilities → [Project Overview](Project-Overview.md)
-- Target audience and market → [Project Overview](Project-Overview.md)
-- Business value and vision → [Project Overview](Project-Overview.md)
+**Project Planning & Management**
+- Project timeline and deliverables → **[Project Workplan](Project-Workplan.md)**
+- Current project health and metrics → **[Current Status](Current-Status.md)**  
+- Project goals and business vision → **[Project Overview](Project-Overview.md)**
+- Executive summary of achievements → **[Improvements Summary](Improvements-Summary.md)**
+
+**Production & Deployment**
+- Mobile app deployment (Android/iOS) → **[Production Deployment](Production-Deployment.md)**
+- Build pipelines and deployment procedures → **[Production Deployment](Production-Deployment.md)**
+- Production environment configuration → **[Production Deployment](Production-Deployment.md)**
+- Deployment checklists and requirements → **[Production Deployment](Production-Deployment.md)**
 
 **Technical Implementation**
-- System architecture → [Technical Architecture](Technical-Architecture.md)
-- State management → [Technical Architecture](Technical-Architecture.md)
-- Firebase integration → [Technical Architecture](Technical-Architecture.md)
-- Performance optimizations → [Improvements Summary](Improvements-Summary.md)
+- System architecture and design → **[Technical Architecture](Technical-Architecture.md)**
+- State management and data flow → **[Technical Architecture](Technical-Architecture.md)**
+- Firebase integration and backend → **[Technical Architecture](Technical-Architecture.md)**
+- Performance optimizations → **[Improvements Summary](Improvements-Summary.md)**
 
 **Development Workflow**
-- Project setup → [Development Guide](Development-Guide.md)
-- Coding standards → [Development Guide](Development-Guide.md)
-- Build and deployment → [Development Guide](Development-Guide.md)
-- Troubleshooting → [Development Guide](Development-Guide.md)
+- Project setup and installation → **[Development Guide](Development-Guide.md)**
+- Coding standards and practices → **[Development Guide](Development-Guide.md)**
+- Build and testing procedures → **[Development Guide](Development-Guide.md)**
+- Troubleshooting and debugging → **[Development Guide](Development-Guide.md)**
 
-**Project History & Changes**
-- What was fixed → [Prior State](Prior-State.md)
-- How it was improved → [Changelog](Changelog.md)
-- Current achievements → [Improvements Summary](Improvements-Summary.md)
-- Project health → [Current Status](Current-Status.md)
-
-**Future Planning**
-- Remaining work → [Pending Fixes](Pending-Fixes.md)
-- Implementation roadmap → [Pending Fixes](Pending-Fixes.md)
-- Priority planning → [Pending Fixes](Pending-Fixes.md)
+**Project History & Progress**
+- What was fixed and improved → **[Prior State](Prior-State.md)**
+- Detailed change history → **[Changelog](Changelog.md)**
+- Current achievements summary → **[Improvements Summary](Improvements-Summary.md)**
+- Remaining work and roadmap → **[Pending Fixes](Pending-Fixes.md)**
 
 ## 📱 About FitMatch
 
