@@ -343,16 +343,16 @@ Ce projet est sous licence propriétaire. Tous droits réservés.
 
 ## 📚 Project Documentation
 
-**Comprehensive Wiki Available**: For detailed documentation about the project, including changes made, current status, and development guides, visit our **[Project Wiki](wiki/README.md)**.
+**Comprehensive Wiki Available**: For detailed documentation about the project, including changes made, current status, and development guides, visit our **[Project Wiki](https://github.com/nashthecoder/fitmatch-fixed/wiki)**.
 
 ### Quick Wiki Navigation:
-- **[Project Overview](wiki/Project-Overview.md)** - Complete app description and features
-- **[Current Status](wiki/Current-Status.md)** - Current state and health metrics
-- **[Changes Made](wiki/Changelog.md)** - Detailed record of all improvements
-- **[Prior State](wiki/Prior-State.md)** - App status before improvements
-- **[Pending Fixes](wiki/Pending-Fixes.md)** - Roadmap to 100% completion
-- **[Development Guide](wiki/Development-Guide.md)** - Setup and development workflow
-- **[Technical Architecture](wiki/Technical-Architecture.md)** - System design and architecture
+- **[Project Overview](https://github.com/nashthecoder/fitmatch-fixed/wiki/Project-Overview)** - Complete app description and features
+- **[Current Status](https://github.com/nashthecoder/fitmatch-fixed/wiki/Current-Status)** - Current state and health metrics
+- **[Changes Made](https://github.com/nashthecoder/fitmatch-fixed/wiki/Changelog)** - Detailed record of all improvements
+- **[Prior State](https://github.com/nashthecoder/fitmatch-fixed/wiki/Prior-State)** - App status before improvements
+- **[Pending Fixes](https://github.com/nashthecoder/fitmatch-fixed/wiki/Pending-Fixes)** - Roadmap to 100% completion
+- **[Development Guide](https://github.com/nashthecoder/fitmatch-fixed/wiki/Development-Guide)** - Setup and development workflow
+- **[Technical Architecture](https://github.com/nashthecoder/fitmatch-fixed/wiki/Technical-Architecture)** - System design and architecture
 
 ---
 
