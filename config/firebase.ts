@@ -4,7 +4,7 @@ import { getFirestore } from "firebase/firestore";
 import { Platform } from "react-native";
 
 // Platform-specific imports
-let auth;
+let auth: any;
 
 // Your web app's Firebase configuration from environment variables
 const firebaseConfig = {

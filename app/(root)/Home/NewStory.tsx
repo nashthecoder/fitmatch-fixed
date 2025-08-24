@@ -60,9 +60,9 @@ export default function NewStory() {
         ),
         posterInfo: {
           uid: userId,
-          nom: userData.nom,
-          prenoms: userData.prenoms,
-          profilePicUrl: userData.profilePicUrl,
+          nom: userData?.nom || "",
+          prenoms: userData?.prenoms || "",
+          profilePicUrl: userData?.profilePicUrl || "",
         },
       };
 
@@ -164,7 +164,6 @@ export default function NewStory() {
         <BlurView
           tint="dark"
           intensity={15}
-          reducedTransparencyFallbackColor="black"
           style={{ ...StyleSheet.absoluteFillObject }}
         />
         <View className="flex-1 items-center justify-center gap-4">

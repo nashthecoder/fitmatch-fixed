@@ -64,8 +64,8 @@ const ViewPostScreen = () => {
         text: newComment.trim(),
         userId: currentUser.uid,
         userInfo: {
-          username: userData.prenoms + " " + userData.nom,
-          profilePicUrl: userData.profilePicUrl || null,
+          username: (userData?.prenoms || "") + " " + (userData?.nom || ""),
+          profilePicUrl: userData?.profilePicUrl || null,
         },
         createdAt: serverTimestamp(),
         likes: {

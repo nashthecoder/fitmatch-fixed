@@ -51,7 +51,7 @@ const AdCreationModal = ({
           {created && (
             <TouchableOpacity
               hitSlop={8}
-              onPress={() => router.dismissTo("/Auth/ProfilPartenaire")}
+              onPress={() => router.dismiss()}
             >
               <CloseIcon />
             </TouchableOpacity>
