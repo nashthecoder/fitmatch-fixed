@@ -289,7 +289,7 @@ const EditEvent = () => {
               onPress={pickEventImages}
             >
               <Text className="text-[13px] text-white font-roboto-condensed tracking-[-0.3px] mx-2 mb-2">
-                Changer l'image de couverture
+                Changer l&apos;image de couverture
               </Text>
               <GaleryIcon />
             </TouchableOpacity>
